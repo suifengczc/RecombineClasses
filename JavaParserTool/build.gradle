@@ -1,0 +1,10 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.13.6'
+    compile group: 'com.google.guava', name: 'guava', version: '11.0.2'
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
