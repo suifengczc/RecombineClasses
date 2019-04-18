@@ -1,12 +1,14 @@
 package com.suifeng.javaparsertool.operation;
 
 import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.base.Strings;
 import com.suifeng.javaparsertool.support.DirExplorer;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,26 @@ import java.util.Random;
  * 类相关操作类
  */
 public class ClassOp {
+
+    /**
+     * 生成类文件
+     *
+     * @param outFileDir out path
+     * @param className
+     * @param classFile
+     */
+    public static void generalClassFile(File outFileDir, String className, CompilationUnit classFile) {
+        try {
+            File outClassFile = new File(outFileDir, className);
+            outClassFile.createNewFile();
+            FileOutputStream fops = new FileOutputStream(outClassFile);
+            fops.write(classFile.toString().getBytes());
+            fops.flush();
+            fops.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 获取源码目录下所有的类
@@ -57,12 +79,12 @@ public class ClassOp {
         Map<Integer, Integer> methodMap = new HashMap<>();
         int leave = methodCount - lowLimit * classCount;
         Random random = new Random();
-        classCount = classCount--;
-        while (classCount >= 1) {
+        int count = classCount-1;
+        while (count >= 1) {
             int rdmInt = random.nextInt(leave);
-            methodMap.put(classCount, rdmInt + lowLimit);
+            methodMap.put(count, rdmInt + lowLimit);
             leave = leave - rdmInt;
-            classCount--;
+            count--;
         }
         methodMap.put(0, leave + lowLimit);
         return methodMap;
