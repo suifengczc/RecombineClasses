@@ -1,12 +1,17 @@
 package com.suifeng.javaparsertool;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.DataKey;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.suifeng.javaparsertool.operation.ClassOp;
 import com.suifeng.javaparsertool.operation.GenerationOp;
 import com.suifeng.javaparsertool.operation.MethodOp;
+import com.suifeng.javaparsertool.operation.XmlOp;
 import com.suifeng.javaparsertool.support.MethodData;
 
 import java.io.File;
@@ -14,62 +19,75 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
-    //配置信息，可通过args修改
+    //============配置信息，可通过args修改============
     private static String mSrcPath = "source_in";//源码路径;
     private static String mOutPath = "source_out";//输出路径;
     private static String mPackageName = "com.dmy";//生成的类的包名
     private static String mPreClassName = "ClassName";//输出类名前缀
+    private static String mEntryMethodName = "loadInnerSdk";//入口方法名
+    private static String mSdkToolConfigName = "SdkToolConfig.xml";
 
     private static int mClassCount = 3;//默认生成类的个数
     private static int mMethodLowLimit = 2;//每个类中最少包含方法数
-    public static int mStaticRatio = 30;//方法设置为static的比例，30表示30%
+    public static int mStaticRatio = 80;//方法设置为static的比例，80表示80%
+    //================================================
 
-    private static ArrayList<MethodDeclaration> mAllMethodInAllClasses; //所有类中的方法集合
-    private static ArrayList<String> mAllMethodsName = new ArrayList<>();//所有方法名
-    private static Map<String, MethodData> mAllMethodData = new HashMap<>();
+    private static ArrayList<MethodDeclaration> mAllMethodInAllClassesList; //所有类中的方法集合
+    private static ArrayList<String> mAllMethodsNameList = new ArrayList<>();//所有方法名
+    private static Map<String, MethodData> mAllMethodDataMap = new HashMap<>();//所有方法的methodData
+    private static Map<String, Integer> mAllStringMap = new HashMap<>();//所有非空字符串的map，用于生成sdkToolConfig.xml
+
 
     public static void main(String[] args) {
         if (args.length > 0) {
             mSrcPath = args[0];
         }
+
         File projectDir = new File(mSrcPath);
         if (!projectDir.exists()) {
             System.out.println("projectDir is not exist");
             return;
         }
 
-        generalAllMethodsList(projectDir);
-        MethodOp.modifyMethodsModifier(mAllMethodInAllClasses);
-        MethodOp.buildMethodData(mAllMethodInAllClasses, mAllMethodData);
-        getAllMethodsName();
+        buildAllMethodsList(projectDir);
+        MethodOp.modifyMethodsModifier(mAllMethodInAllClassesList);
 
-        if (mAllMethodInAllClasses.isEmpty()) {
+
+//        ResolvedType type = JavaParserFacade.get(new JavaParserTypeSolver(projectDir)).getType(mAllMethodInAllClassesList.get(0).getChildNodes().get(0).getParentNode().get());
+//        System.out.println(type);
+//        MethodOp.modifyMethodsParamsName(projectDir,mAllMethodInAllClassesList);
+        MethodOp.buildMethodData(mAllMethodInAllClassesList, mAllMethodDataMap);
+        buildAllMethodsNameList();
+        buildAllStringsMap();
+
+
+        if (mAllMethodInAllClassesList.isEmpty()) {
             System.out.println("there is no methods");
             return;
         }
         File outFileDir = new File(mOutPath + File.separator);
-        File tempFileDir = new File(mOutPath + File.separator);
         initDir(outFileDir);
-        initDir(tempFileDir);
-
         //把所有method乱序
-        Collections.shuffle(mAllMethodInAllClasses);
+        Collections.shuffle(mAllMethodInAllClassesList);
         //生成每个类的CompilationUnit
         ArrayList<CompilationUnit> allClassFiles = GenerationOp.CompilationUnitGenerate(mClassCount, mPackageName, mPreClassName);
         //分配每个类的方法个数
-        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(mAllMethodInAllClasses.size(), mMethodLowLimit, mClassCount);
+        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(mAllMethodInAllClassesList.size(), mMethodLowLimit, mClassCount);
         int methodIndex = 0;
         //记录方法被分配到的类
         for (int i = 0; i < allClassFiles.size(); i++) {
             String classFileName = mPreClassName + i;
             int methodCount = methodCountMap.get(i);
             for (int j = 0; j < methodCount; j++) {
-                MethodDeclaration srcMethod = mAllMethodInAllClasses.get(methodIndex++);
-                mAllMethodData.get(srcMethod.getName().asString()).setBelongToClass(classFileName);
+                MethodDeclaration srcMethod = mAllMethodInAllClassesList.get(methodIndex++);
+                mAllMethodDataMap.get(srcMethod.getName().asString()).setBelongToClass(classFileName);
             }
         }
+        XmlOp.buildXml(mOutPath + File.separator + mSdkToolConfigName, mClassCount, mPreClassName, mAllMethodsNameList, mAllStringMap, mAllMethodDataMap, mPackageName, mEntryMethodName);
         methodIndex = 0;
         //把方法添加到类中
         for (int i = 0; i < allClassFiles.size(); i++) {
@@ -79,16 +97,44 @@ public class Main {
             int methodCount = methodCountMap.get(i);
             //添加方法
             for (int j = 0; j < methodCount; j++) {
-                MethodDeclaration srcMethod = mAllMethodInAllClasses.get(methodIndex);
+                MethodDeclaration srcMethod = mAllMethodInAllClassesList.get(methodIndex);
                 MethodDeclaration addMethod = thisClass.addMethod(srcMethod.getName().toString(), Modifier.publicModifier().getKeyword());
                 methodIndex++;
                 MethodOp.cloneMethod(srcMethod, addMethod);
-                MethodOp.setMethodScope(addMethod, mAllMethodsName, mAllMethodData);
+                MethodOp.setMethodScope(addMethod, mAllMethodsNameList, mAllMethodDataMap);
             }
-            if (tempFileDir.exists()) {
-                ClassOp.generalClassFile(tempFileDir, classFileName + ".java", classFile);
+            if (outFileDir.exists()) {
+                ClassOp.generalClassFile(outFileDir, classFileName + ".java", classFile);
             }
         }
+    }
+
+    /**
+     * 构建所有string的map
+     */
+    public static void buildAllStringsMap() {
+        int i = 1;
+        //遍历所有方法的所有表达式,匹配字符串
+        for (MethodDeclaration method : mAllMethodInAllClassesList) {
+            new VoidVisitorAdapter<Object>() {
+                @Override
+                public void visit(ExpressionStmt expressionStmt, Object arg) {
+                    System.out.println(expressionStmt);
+                    String expressionStr = expressionStmt.asExpressionStmt().toString();
+                    Pattern p = Pattern.compile("\"(.*?)\"");
+                    Matcher m = p.matcher(expressionStr);
+                    while (m.find()) {
+                        String matchStr = m.group();
+                        if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"")) {
+                            mAllStringMap.put(matchStr.substring(1, matchStr.length() - 1), (int) arg);
+                        }
+                    }
+                    super.visit(expressionStmt, arg);
+                }
+            }.visit(method, i++);
+        }
+        mAllStringMap.put("noIdea",i++);
+        mAllStringMap.put("loadAttachContext",i++);
     }
 
     /**
@@ -96,15 +142,15 @@ public class Main {
      *
      * @param projectDir
      */
-    public static void generalAllMethodsList(File projectDir) {
+    public static void buildAllMethodsList(File projectDir) {
         ArrayList<ClassOrInterfaceDeclaration> allClasses = new ArrayList<>();
         ClassOp classOp = new ClassOp();
         classOp.getAllClasses(projectDir, allClasses);
-        mAllMethodInAllClasses = new ArrayList<>();
+        mAllMethodInAllClassesList = new ArrayList<>();
         //遍历所有类获取其中的所有方法
         if (!allClasses.isEmpty()) {
             for (ClassOrInterfaceDeclaration theClass : allClasses) {
-                mAllMethodInAllClasses.addAll(theClass.getMethods());
+                mAllMethodInAllClassesList.addAll(theClass.getMethods());
             }
         }
     }
@@ -112,9 +158,9 @@ public class Main {
     /**
      * 获取所有方法名
      */
-    private static void getAllMethodsName() {
-        for (MethodDeclaration method : mAllMethodInAllClasses) {
-            mAllMethodsName.add(method.getName().asString());
+    private static void buildAllMethodsNameList() {
+        for (MethodDeclaration method : mAllMethodInAllClassesList) {
+            mAllMethodsNameList.add(method.getName().asString());
         }
     }
 
