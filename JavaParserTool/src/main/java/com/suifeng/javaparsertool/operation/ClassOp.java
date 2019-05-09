@@ -1,10 +1,10 @@
 package com.suifeng.javaparsertool.operation;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.google.common.base.Strings;
+import com.suifeng.javaparsertool.Main;
 import com.suifeng.javaparsertool.support.DirExplorer;
 
 import java.io.File;
@@ -58,7 +58,7 @@ public class ClassOp {
                         System.out.println(" * " + n.getName());
                         allClasses.add(n);
                     }
-                }.visit(new JavaParser().parse(file).getResult().get(), null);
+                }.visit(Main.mJavaParser.parse(file).getResult().get(), null);
                 System.out.println(); // empty line
             } catch (IOException e) {
 //                new RuntimeException(e);
@@ -79,7 +79,7 @@ public class ClassOp {
         Map<Integer, Integer> methodMap = new HashMap<>();
         int leave = methodCount - lowLimit * classCount;
         Random random = new Random();
-        int count = classCount-1;
+        int count = classCount - 1;
         while (count >= 1) {
             int rdmInt = random.nextInt(leave);
             methodMap.put(count, rdmInt + lowLimit);

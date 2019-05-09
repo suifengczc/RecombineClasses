@@ -1,13 +1,17 @@
 package com.suifeng.javaparsertool;
 
+import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.DataKey;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.suifeng.javaparsertool.operation.ClassOp;
 import com.suifeng.javaparsertool.operation.GenerationOp;
 import com.suifeng.javaparsertool.operation.MethodOp;
@@ -19,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Main {
     //============配置信息，可通过args修改============
@@ -31,7 +33,7 @@ public class Main {
     private static String mEntryMethodName = "loadInnerSdk";//入口方法名
     private static String mSdkToolConfigName = "SdkToolConfig.xml";
 
-    private static int mClassCount = 3;//默认生成类的个数
+    private static int mClassCount = 5;//默认生成类的个数
     private static int mMethodLowLimit = 2;//每个类中最少包含方法数
     public static int mStaticRatio = 80;//方法设置为static的比例，80表示80%
     //================================================
@@ -39,7 +41,9 @@ public class Main {
     private static ArrayList<MethodDeclaration> mAllMethodInAllClassesList; //所有类中的方法集合
     private static ArrayList<String> mAllMethodsNameList = new ArrayList<>();//所有方法名
     private static Map<String, MethodData> mAllMethodDataMap = new HashMap<>();//所有方法的methodData
-    private static Map<String, Integer> mAllStringMap = new HashMap<>();//所有非空字符串的map，用于生成sdkToolConfig.xml
+    private static Map<String, String> mAllStringMap = new HashMap<>();//所有非空字符串的map，用于生成sdkToolConfig.xml
+
+    public static JavaParser mJavaParser;//解析类对象
 
 
     public static void main(String[] args) {
@@ -52,6 +56,13 @@ public class Main {
             System.out.println("projectDir is not exist");
             return;
         }
+
+
+        initJavaParser(projectDir);
+
+//        ParseResult<CompilationUnit> parse = mJavaParser.parse(projectDir + File.separator + "Common.java");
+//        CompilationUnit compilationUnit = parse.getResult().get();
+//        compilationUnit.findAll(MethodCallExpr.class).forEach(mce -> System.out.println(mce.resol));
 
         buildAllMethodsList(projectDir);
         MethodOp.modifyMethodsModifier(mAllMethodInAllClassesList);
@@ -110,31 +121,48 @@ public class Main {
     }
 
     /**
+     * 初始化JavaParser
+     */
+    private static void initJavaParser(File projectDir) {
+        ReflectionTypeSolver reflectionTypeSolver = new ReflectionTypeSolver();
+        JavaParserTypeSolver javaParserTypeSolver = new JavaParserTypeSolver(projectDir);
+        TypeSolver typeSolver = new CombinedTypeSolver();
+        ((CombinedTypeSolver) typeSolver).add(reflectionTypeSolver);
+        ((CombinedTypeSolver) typeSolver).add(javaParserTypeSolver);
+        JavaSymbolSolver solver = new JavaSymbolSolver(typeSolver);
+        mJavaParser = new JavaParser();
+        mJavaParser.getParserConfiguration().setSymbolResolver(solver);
+    }
+
+    static class ForCount {
+        int count = 1;
+    }
+
+    /**
      * 构建所有string的map
      */
     public static void buildAllStringsMap() {
-        int i = 1;
-        //遍历所有方法的所有表达式,匹配字符串
+        ForCount forCount = new ForCount();
+        //去除所有字符串
         for (MethodDeclaration method : mAllMethodInAllClassesList) {
             new VoidVisitorAdapter<Object>() {
                 @Override
-                public void visit(ExpressionStmt expressionStmt, Object arg) {
-                    System.out.println(expressionStmt);
-                    String expressionStr = expressionStmt.asExpressionStmt().toString();
-                    Pattern p = Pattern.compile("\"(.*?)\"");
-                    Matcher m = p.matcher(expressionStr);
-                    while (m.find()) {
-                        String matchStr = m.group();
-                        if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"")) {
-                            mAllStringMap.put(matchStr.substring(1, matchStr.length() - 1), (int) arg);
+                public void visit(StringLiteralExpr n, Object arg) {
+                    String matchStr = n.asString();
+//                    System.out.println(matchStr);
+                    if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"") && !":".equals(matchStr) && !"%x".equals(matchStr)) {
+                        if ("PluginConfig".equals(matchStr) || "AssetName".equals(matchStr)) {
+                            mAllStringMap.put(matchStr, matchStr);
+                        } else {
+                            mAllStringMap.put(matchStr, "Label" + forCount.count++);
                         }
                     }
-                    super.visit(expressionStmt, arg);
+                    super.visit(n, arg);
                 }
-            }.visit(method, i++);
+            }.visit(method, null);
         }
-        mAllStringMap.put("noIdea",i++);
-        mAllStringMap.put("loadAttachContext",i++);
+        mAllStringMap.put("noIdea", "Label" + forCount.count++);
+        mAllStringMap.put("loadAttachContext", "Label" + forCount.count++);
     }
 
     /**

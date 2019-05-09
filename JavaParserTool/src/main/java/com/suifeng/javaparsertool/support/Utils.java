@@ -18,4 +18,16 @@ public class Utils {
         cs[index]-=32;
         return String.valueOf(cs);
     }
+
+    /**
+     * 是否空字符串
+     * @param str
+     * @return true 为空
+     */
+    public static boolean isStringEmpty(CharSequence str) {
+        if (str == null || str.length() == 0)
+            return true;
+        else
+            return false;
+    }
 }

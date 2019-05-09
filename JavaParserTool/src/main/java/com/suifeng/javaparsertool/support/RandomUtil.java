@@ -36,6 +36,33 @@ public class RandomUtil {
         return buffer.toString();
     }
 
+    public static String getRandConfig(String group) {
+        String rand = "${@config\\\\rand\\\\rand";
+        int num = randInt(1, 5);
+        return Utils.isStringEmpty(group) ? rand + num + "}" : rand + num + "|#unique=" + group + "}";
+    }
+
+    /**
+     * 生成多层级的随机目录
+     *
+     * @param contact 连接符
+     * @param group   分组信息
+     * @return
+     */
+    public static String getMultRandConfig(String contact, String group) {
+        StringBuffer sb = new StringBuffer(45);
+        int count = randInt(1, 3);
+        for (int i = 1; i <= count; i++) {
+            if (i != count) {
+                sb.append(getRandConfig(null));
+                sb.append(contact);
+            } else {
+                sb.append(getRandConfig(group));
+            }
+        }
+        return sb.toString();
+    }
+
     public static String randWordNember(int min, int max) {
         Random random = _rand;
         int len = random.nextInt(max - min) + min;

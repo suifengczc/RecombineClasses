@@ -44,6 +44,7 @@ public class MethodOp {
         targetMethod.setType(srcMethod.getType());
         targetMethod.setModifiers(srcMethod.getModifiers());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
+        targetMethod.setThrownExceptions(srcMethod.getThrownExceptions());
     }
 
     /**
