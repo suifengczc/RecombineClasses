@@ -35,7 +35,7 @@ public class Main {
 
     private static int mClassCount = 5;//默认生成类的个数
     private static int mMethodLowLimit = 2;//每个类中最少包含方法数
-    public static int mStaticRatio = 80;//方法设置为static的比例，80表示80%
+    public static float mStaticRatio = 0.8F;//方法设置为static的比例，80表示80%
     //================================================
 
     private static ArrayList<MethodDeclaration> mAllMethodInAllClassesList; //所有类中的方法集合
@@ -57,7 +57,6 @@ public class Main {
             return;
         }
 
-
         initJavaParser(projectDir);
 
 //        ParseResult<CompilationUnit> parse = mJavaParser.parse(projectDir + File.separator + "Common.java");
@@ -67,14 +66,12 @@ public class Main {
         buildAllMethodsList(projectDir);
         MethodOp.modifyMethodsModifier(mAllMethodInAllClassesList);
 
-
 //        ResolvedType type = JavaParserFacade.get(new JavaParserTypeSolver(projectDir)).getType(mAllMethodInAllClassesList.get(0).getChildNodes().get(0).getParentNode().get());
 //        System.out.println(type);
 //        MethodOp.modifyMethodsParamsName(projectDir,mAllMethodInAllClassesList);
         MethodOp.buildMethodData(mAllMethodInAllClassesList, mAllMethodDataMap);
         buildAllMethodsNameList();
         buildAllStringsMap();
-
 
         if (mAllMethodInAllClassesList.isEmpty()) {
             System.out.println("there is no methods");
@@ -134,22 +131,22 @@ public class Main {
         mJavaParser.getParserConfiguration().setSymbolResolver(solver);
     }
 
-    static class ForCount {
-        int count = 1;
-    }
+
 
     /**
      * 构建所有string的map
      */
     public static void buildAllStringsMap() {
+        class ForCount {
+            int count = 1;
+        }
         ForCount forCount = new ForCount();
-        //去除所有字符串
+        //遍历所有字符串
         for (MethodDeclaration method : mAllMethodInAllClassesList) {
             new VoidVisitorAdapter<Object>() {
                 @Override
                 public void visit(StringLiteralExpr n, Object arg) {
                     String matchStr = n.asString();
-//                    System.out.println(matchStr);
                     if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"") && !":".equals(matchStr) && !"%x".equals(matchStr)) {
                         if ("PluginConfig".equals(matchStr) || "AssetName".equals(matchStr)) {
                             mAllStringMap.put(matchStr, matchStr);

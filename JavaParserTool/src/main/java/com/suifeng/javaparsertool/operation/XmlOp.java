@@ -9,7 +9,9 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
+import org.dom4j.tree.DefaultText;
 
+import java.beans.PropertyEditorManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -24,7 +26,9 @@ public class XmlOp {
 
     private static final String[] PLUGIN_ARRAY = {"web", "dsp", "live", "appleid", "AZeroPlug", "IFirstPlug", "LSecondPlug", "NThreePlug", "CFivePlug", "FSixPlug", "VEightPlug", "TNinePlug", "BTenPlug", "MElevenPlug", "PTwelvePlug", "AThirteenPlug", "BasicLibrary", "AssetName", "PluginConfig", "VirName"};
     private static final String[] OTHERS_ARRAY = {"ForeignCount", "PluginsDir", "PluginFile", "DownloadDB", "NowData", "ApiInfo", "PathChange", "DownloadDBNew", "XNJ", "VirtualEnc", "DataEnc", "OptEnc", "UserEnc", "Mob"};
-    private static final String[] ENCRYPT_ARRAY = {"appleid", "AZeroPlug", "IFirstPlug", "LSecondPlug", "NThreePlug", "CFivePlug", "FSixPlug", "VEightPlug", "TNinePlug", "BTenPlug", "MElevenPlug", "basic"};
+    private static final String[] ENCRYPT_ARRAY = {"IFirstPlug", "LSecondPlug", "NThreePlug", "CFivePlug", "FSixPlug", "VEightPlug", "TNinePlug", "BTenPlug", "MElevenPlug"};
+    private static int addFileCount = 3;//添加文件的个数
+    private static int pluginDirCount = 3;//插件路径个数
 
     /**
      * 生成SdkToolConfig.xml文件
@@ -44,8 +48,13 @@ public class XmlOp {
             Document document = DocumentHelper.createDocument();
             // 创建根节点Config
             Element configElement = document.addElement("Config");
+
+            addFileCount = RandomUtil.randInt(3, 6);
+            pluginDirCount = RandomUtil.randInt(3, 6);
+
             // 生成子节点Setup
             Element setupElement = configElement.addElement("Setup");
+
             setSetupElement(setupElement, classCount, preClassName, mAllMethodsNameList);
             //子节点setup结束
 
@@ -100,6 +109,8 @@ public class XmlOp {
 
             setWriteRunInfoElement(configElement);
 
+            setAddFileElemenet(configElement);
+
             // 5、设置生成xml的格式
             OutputFormat format = OutputFormat.createCompactFormat();
             // 设置编码格式
@@ -107,6 +118,7 @@ public class XmlOp {
             format.setNewlines(true);
             format.setIndent(true);
             format.setIndentSize(4);
+            format.setNewLineAfterDeclaration(true);
 
             // 6、生成xml文件
             File file = new File(xmlOutPath);
@@ -122,6 +134,7 @@ public class XmlOp {
         }
     }
 
+
     private static void setSetupElement(Element setupElement, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList) {
         setupElement.addAttribute("Name", "Setup");
 
@@ -132,12 +145,12 @@ public class XmlOp {
 
         sourceElement = setupElement.addElement("Source");
         sourceElement.addAttribute("Name", "SdkApplication");
-        sourceElement.addAttribute("Value", "${%packagename}." + RandomUtil.getMultRandConfig(".", null));
+        sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
 
         for (int i = 0; i < classCount; i++) {
             sourceElement = setupElement.addElement("Source");
             sourceElement.addAttribute("Name", preClassName + i);
-            sourceElement.addAttribute("Value", "${%packagename}." + RandomUtil.getMultRandConfig(".", null));
+            sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
         }
 
         for (String method : mAllMethodsNameList) {
@@ -147,10 +160,10 @@ public class XmlOp {
             sourceElement.addAttribute("Value", RandomUtil.getRandConfig("Method"));
         }
 
-        for (int i = 1; i < 4; i++) {
+        for (int i = 0; i < pluginDirCount; i++) {
             sourceElement = setupElement.addElement("Source");
             sourceElement.addAttribute("Name", "Plugin_" + i);
-            sourceElement.addAttribute("Value", RandomUtil.getMultRandConfig("/", null));
+            sourceElement.addAttribute("Value", RandomUtil.getMultRandConfig("/", null, 1, 3, false));
         }
 
 
@@ -173,6 +186,37 @@ public class XmlOp {
         sourceElement = setupElement.addElement("Source");
         sourceElement.addAttribute("Name", "VirtualShortcutAction");
         sourceElement.addAttribute("Value", "com." + RandomUtil.getRandConfig(null) + "." + RandomUtil.getRandConfig(null) + ".action");
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "HostTaskAffinity");
+        sourceElement.addAttribute("Value", "com." + RandomUtil.getRandConfig(null) + "." + RandomUtil.getRandConfig(null));
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "StyleCStuThemeConfig");
+        sourceElement.addAttribute("Value", "@style/" + RandomUtil.getRandConfig(null));
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "StyleCDiaThemeConfig");
+        sourceElement.addAttribute("Value", "@style/" + RandomUtil.getRandConfig(null));
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "StyleCStuTheme");
+        sourceElement.addAttribute("Value", "${%StyleCStuThemeConfig}");
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "StyleCDiaTheme");
+        sourceElement.addAttribute("Value", "${%StyleCDiaThemeConfig}");
+
+        sourceElement = setupElement.addElement("Source");
+        sourceElement.addAttribute("Name", "StyleCDiaTheme");
+        sourceElement.addAttribute("Value", "${%StyleCDiaThemeConfig}");
+
+        for (int i = 0; i < addFileCount; i++) {
+            int p = RandomUtil.randInt(0, pluginDirCount - 1);
+            sourceElement = setupElement.addElement("Source");
+            sourceElement.addAttribute("Name", "addFile_" + i);
+            sourceElement.addAttribute("Value", "${%Plugin_" + p + "}/" + RandomUtil.getRandConfig("plugin"));
+        }
 
 
     }
@@ -350,6 +394,10 @@ public class XmlOp {
         editManifestElement.addAttribute("Name", "AndroidManifest.xml");
         editManifestElement.addAttribute("StubActivityCount", "" + RandomUtil.randInt(9, 20));
         editManifestElement.addAttribute("DialogActivityCount", "" + RandomUtil.randInt(9, 20));
+        editManifestElement.addAttribute("AddActivityCount", "10,20");
+        editManifestElement.addAttribute("AddServiceCount", "2,7");
+        editManifestElement.addAttribute("AddProviderCount", "0,0");
+        editManifestElement.addAttribute("AddReceiverCount", "0,0");
     }
 
     private static void setEditSdkCodeElement(Element editSdkCodeElement, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName, Map<String, String> mAllStringMap) {
@@ -406,9 +454,34 @@ public class XmlOp {
 
     private static void setLastEncryptElement(Element configElement) {
         Element encryptElement = configElement.addElement("Encrypt");
+
+        encryptElement.addAttribute("Name", "assets/appleid");
+        encryptElement.addAttribute("MoveName", "appleid");
+        Element cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\zipacess.jar addRandomData $(src) $(temp) 1000 50000");
+        cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\classes.jar encrypt $(temp) $(tar) 379");
+
+        encryptElement = configElement.addElement("Encrypt");
+        encryptElement.addAttribute("Name", "assets/AZeroPlug");
+        encryptElement.addAttribute("MoveName", "AZeroPlug");
+        cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\zipacess.jar addRandomData $(src) $(temp) 1000 50000");
+        cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\classes.jar encrypt $(temp) $(tar) 379");
+
+        encryptElement = configElement.addElement("Encrypt");
+        encryptElement.addAttribute("Name", "assets/basic");
+        encryptElement.addAttribute("MoveName", "BasicLibrary");
+        cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\zipacess.jar addRandomData $(src) $(temp) 1000 50000");
+        cmdElement = encryptElement.addElement("Cmd");
+        cmdElement.addAttribute("Line", "java -jar bin\\classes.jar encrypt $(temp) $(tar) 379");
+
+        encryptElement = configElement.addElement("Encrypt");
         encryptElement.addAttribute("Name", "assets/Tlive");
         encryptElement.addAttribute("MoveName", "live");
-        Element cmdElement = encryptElement.addElement("Cmd");
+        cmdElement = encryptElement.addElement("Cmd");
         cmdElement.addAttribute("Line", "java -jar bin\\\\filesecurity.jar enc key $(src) $(tar) $get('PluginMask')");
 
         encryptElement = configElement.addElement("Encrypt");
@@ -440,4 +513,12 @@ public class XmlOp {
         writeRunInfoElement.addAttribute("NewNative", "true");
     }
 
+    private static void setAddFileElemenet(Element configElement) {
+        for (int i = 0; i < addFileCount; i++) {
+            Element addFileElement = configElement.addElement("AddFile");
+            addFileElement.addAttribute("Name", "apk:///assets/");
+            addFileElement.addAttribute("MoveName", "addFile_" + i);
+            addFileElement.addAttribute("DirName", "assets/");
+        }
+    }
 }

@@ -45,6 +45,7 @@ public class MethodOp {
         targetMethod.setModifiers(srcMethod.getModifiers());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
         targetMethod.setThrownExceptions(srcMethod.getThrownExceptions());
+        targetMethod.setAnnotations(srcMethod.getAnnotations());
     }
 
     /**
@@ -81,8 +82,9 @@ public class MethodOp {
     public static void modifyMethodsModifier(ArrayList<MethodDeclaration> allMethods) {
         Random random = new Random();
         for (MethodDeclaration method : allMethods) {
-            int i = random.nextInt(100);
-            if (i <= Main.mStaticRatio) {
+            String methodName = method.getName().asString();
+            float i = random.nextFloat();
+            if (i <= Main.mStaticRatio || "loadInnerSdk".equals(methodName)) {
                 NodeList<Modifier> modifierList = new NodeList<>();
                 modifierList.add(Modifier.publicModifier());
                 modifierList.add(Modifier.staticModifier());

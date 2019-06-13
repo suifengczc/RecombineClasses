@@ -45,13 +45,22 @@ public class RandomUtil {
     /**
      * 生成多层级的随机目录
      *
-     * @param contact 连接符
-     * @param group   分组信息
+     * @param contact       连接符
+     * @param group         分组信息
+     * @param min           最少个数
+     * @param max           最多个数
+     * @param contactBefore config前面是否要带连接符,true-要带
      * @return
      */
-    public static String getMultRandConfig(String contact, String group) {
+    public static String getMultRandConfig(String contact, String group, int min, int max, boolean contactBefore) {
         StringBuffer sb = new StringBuffer(45);
-        int count = randInt(1, 3);
+        int count = randInt(min, max);
+        if (count == 0) {
+            return "";
+        }
+        if (contactBefore) {
+            sb.append(contact);
+        }
         for (int i = 1; i <= count; i++) {
             if (i != count) {
                 sb.append(getRandConfig(null));
