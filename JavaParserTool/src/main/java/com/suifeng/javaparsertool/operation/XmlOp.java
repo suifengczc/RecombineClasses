@@ -1,6 +1,7 @@
 package com.suifeng.javaparsertool.operation;
 
 import com.suifeng.javaparsertool.support.MethodData;
+import com.suifeng.javaparsertool.support.MyXmlWriter;
 import com.suifeng.javaparsertool.support.RandomUtil;
 import com.suifeng.javaparsertool.support.Utils;
 
@@ -122,7 +123,7 @@ public class XmlOp {
 
             // 6、生成xml文件
             File file = new File(xmlOutPath);
-            XMLWriter writer = new XMLWriter(new FileOutputStream(file), format);
+            MyXmlWriter writer = new MyXmlWriter(new FileOutputStream(file), format);
             // 设置是否转义，默认使用转义字符
             writer.setEscapeText(false);
             writer.write(document);
