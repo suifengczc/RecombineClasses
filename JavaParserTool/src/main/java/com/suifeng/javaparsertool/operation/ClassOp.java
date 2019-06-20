@@ -41,12 +41,12 @@ public class ClassOp {
     }
 
     /**
-     * 获取源码目录下所有的类
+     * 返回源码目录下所有的类
      *
      * @param projectDir 源码目录
-     * @param allClasses ArrayList存储所有类信息
      */
-    public void getAllClasses(File projectDir, ArrayList<ClassOrInterfaceDeclaration> allClasses) {
+    public static ArrayList<ClassOrInterfaceDeclaration> getAllClasses(File projectDir) {
+        ArrayList<ClassOrInterfaceDeclaration> allClasses = new ArrayList<>();
         new DirExplorer((level, path, file) -> path.endsWith(".java"), (level, path, file) -> {
             System.out.println(path);
             System.out.println(Strings.repeat("=", path.length()));
@@ -59,12 +59,12 @@ public class ClassOp {
                         allClasses.add(n);
                     }
                 }.visit(Main.mJavaParser.parse(file).getResult().get(), null);
-                System.out.println(); // empty line
+                System.out.println();
             } catch (IOException e) {
-//                new RuntimeException(e);
                 e.printStackTrace();
             }
         }).explore(projectDir);
+        return allClasses;
     }
 
     /**

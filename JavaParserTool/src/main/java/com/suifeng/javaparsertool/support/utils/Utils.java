@@ -1,4 +1,4 @@
-package com.suifeng.javaparsertool.support;
+package com.suifeng.javaparsertool.support.utils;
 
 
 /**

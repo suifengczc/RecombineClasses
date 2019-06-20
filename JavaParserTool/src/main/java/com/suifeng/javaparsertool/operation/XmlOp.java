@@ -1,18 +1,15 @@
 package com.suifeng.javaparsertool.operation;
 
-import com.suifeng.javaparsertool.support.MethodData;
+import com.suifeng.javaparsertool.support.data.MethodData;
 import com.suifeng.javaparsertool.support.MyXmlWriter;
-import com.suifeng.javaparsertool.support.RandomUtil;
-import com.suifeng.javaparsertool.support.Utils;
+import com.suifeng.javaparsertool.support.utils.RandomUtil;
+import com.suifeng.javaparsertool.support.utils.Utils;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
-import org.dom4j.io.XMLWriter;
-import org.dom4j.tree.DefaultText;
 
-import java.beans.PropertyEditorManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -208,9 +205,6 @@ public class XmlOp {
         sourceElement.addAttribute("Name", "StyleCDiaTheme");
         sourceElement.addAttribute("Value", "${%StyleCDiaThemeConfig}");
 
-        sourceElement = setupElement.addElement("Source");
-        sourceElement.addAttribute("Name", "StyleCDiaTheme");
-        sourceElement.addAttribute("Value", "${%StyleCDiaThemeConfig}");
 
         for (int i = 0; i < addFileCount; i++) {
             int p = RandomUtil.randInt(0, pluginDirCount - 1);

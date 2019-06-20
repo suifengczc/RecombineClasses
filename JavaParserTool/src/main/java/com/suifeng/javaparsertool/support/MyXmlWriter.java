@@ -109,10 +109,10 @@ public class MyXmlWriter extends XMLWriter {
                 this.writer.write(quote);
                 this.writeEscapeAttributeEntities(attribute.getValue());
                 this.writer.write(quote);
-                if (i == size - 1) {
-                    writePrintln();
-                    writeIndent();
-                }
+//                if (i == size - 1) {
+//                    writePrintln();
+//                    writeIndent();
+//                }
             }
         }
     }

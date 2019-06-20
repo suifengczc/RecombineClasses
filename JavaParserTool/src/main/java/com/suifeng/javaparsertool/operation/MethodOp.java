@@ -20,12 +20,12 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.model.resolution.SymbolReference;
 import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import com.suifeng.javaparsertool.Main;
-import com.suifeng.javaparsertool.support.MethodData;
+import com.suifeng.javaparsertool.support.data.MethodData;
+import com.suifeng.javaparsertool.support.utils.RandomUtil;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * 方法相关操作类
@@ -35,17 +35,31 @@ public class MethodOp {
     /**
      * 复制方法
      *
-     * @param srcMethod
+     * @param srcMethodData
      * @param targetMethod
      */
-    public static void cloneMethod(MethodDeclaration srcMethod, MethodDeclaration targetMethod) {
+    public static void cloneMethod(MethodData srcMethodData, MethodDeclaration targetMethod) {
+        MethodDeclaration srcMethod = srcMethodData.getOriginData();
         targetMethod.setParameters(srcMethod.getParameters());
         targetMethod.setBody(srcMethod.getBody().get());
         targetMethod.setType(srcMethod.getType());
-        targetMethod.setModifiers(srcMethod.getModifiers());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
         targetMethod.setThrownExceptions(srcMethod.getThrownExceptions());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
+        String methodName = targetMethod.getNameAsString();
+        //修改方法修饰符
+        if (RandomUtil.randFloat() <= Main.mStaticRatio || "loadInnerSdk".equals(methodName)) {
+            NodeList<Modifier> modifierList = new NodeList<>();
+            modifierList.add(Modifier.publicModifier());
+            modifierList.add(Modifier.staticModifier());
+            targetMethod.setModifiers(modifierList);
+            srcMethodData.setStatic(true);
+        }else{
+            NodeList<Modifier> modifierList = new NodeList<>();
+            modifierList.add(Modifier.publicModifier());
+            targetMethod.setModifiers(modifierList);
+            srcMethodData.setStatic(false);
+        }
     }
 
     /**
@@ -72,29 +86,6 @@ public class MethodOp {
                 }
             }
         }.visit(method, null);
-    }
-
-    /**
-     * 修改方法的修饰符
-     *
-     * @param allMethods
-     */
-    public static void modifyMethodsModifier(ArrayList<MethodDeclaration> allMethods) {
-        Random random = new Random();
-        for (MethodDeclaration method : allMethods) {
-            String methodName = method.getName().asString();
-            float i = random.nextFloat();
-            if (i <= Main.mStaticRatio || "loadInnerSdk".equals(methodName)) {
-                NodeList<Modifier> modifierList = new NodeList<>();
-                modifierList.add(Modifier.publicModifier());
-                modifierList.add(Modifier.staticModifier());
-                method.setModifiers(modifierList);
-            } else {
-                NodeList<Modifier> modifierList = new NodeList<>();
-                modifierList.add(Modifier.publicModifier());
-                method.setModifiers(modifierList);
-            }
-        }
     }
 
     public static void modifyMethodsParamsName(File projectDir, ArrayList<MethodDeclaration> allMethods) {
@@ -178,16 +169,4 @@ public class MethodOp {
 
     }
 
-    /**
-     * 创建MethodData
-     *
-     * @param allMethods
-     * @param allMethodData
-     */
-    public static void buildMethodData(ArrayList<MethodDeclaration> allMethods, Map<String, MethodData> allMethodData) {
-        for (MethodDeclaration method : allMethods) {
-            MethodData md = new MethodData(method);
-            allMethodData.put(method.getName().asString(), md);
-        }
-    }
 }

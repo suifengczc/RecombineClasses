@@ -1,4 +1,4 @@
-package com.suifeng.javaparsertool.support;
+package com.suifeng.javaparsertool.support.utils;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -21,6 +21,10 @@ public class RandomUtil {
         return _rand.nextInt(max - min + 1) + min;
     }
 
+    public static float randFloat(){
+        return _rand.nextFloat();
+    }
+
     public static String randWord(int min, int max) {
         Random random = _rand;
         int len = random.nextInt(max - min + 1) + min;
@@ -36,6 +40,11 @@ public class RandomUtil {
         return buffer.toString();
     }
 
+    /**
+     * 随机一个config
+     * @param group
+     * @return
+     */
     public static String getRandConfig(String group) {
         String rand = "${@config\\\\rand\\\\rand";
         int num = randInt(1, 5);
