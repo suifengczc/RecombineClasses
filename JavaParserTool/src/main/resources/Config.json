@@ -1,0 +1,24 @@
+{
+  "type": 0,
+  "src_path": "source_in",
+  "out_path": "source_out",
+  "package_name": "com.dmy",
+  "pre_class_name": "ClassName",
+  "entry_method": "loadInnerSdk",
+  "config_xml_name": "SdkToolConfig.xml",
+  "class_count": 5,
+  "method_low_limit": 4,
+  "static_ratio": 0.8,
+  "modify_Modifier": true,
+  "static_method": [
+    "abc"
+  ],
+  "white_list": {
+    "keep_method": [
+      "abc"
+    ],
+    "keep_class": [
+      "abc"
+    ]
+  }
+}

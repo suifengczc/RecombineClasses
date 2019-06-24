@@ -4,6 +4,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.13.6'
     implementation 'com.google.guava:guava:24.1-jre'
+    implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'org.dom4j:dom4j:2.1.1'
 }
 

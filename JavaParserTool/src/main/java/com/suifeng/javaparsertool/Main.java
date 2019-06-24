@@ -12,10 +12,13 @@ import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.suifeng.javaparsertool.operation.ClassOp;
 import com.suifeng.javaparsertool.operation.GenerationOp;
 import com.suifeng.javaparsertool.operation.MethodOp;
 import com.suifeng.javaparsertool.operation.XmlOp;
+import com.suifeng.javaparsertool.support.config.Config;
 import com.suifeng.javaparsertool.support.data.ClassGroup;
 import com.suifeng.javaparsertool.support.data.MethodData;
 import com.suifeng.javaparsertool.support.data.MethodGroup;
@@ -27,32 +30,45 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-    //============配置信息，可通过args修改============
-    private static String mSrcPath = "source_in";//源码路径;
-    private static String mOutPath = "source_out";//输出路径;
-    private static String mPackageName = "com.dmy";//生成的类的包名
-    private static String mPreClassName = "ClassName";//输出类名前缀
-    private static String mEntryMethodName = "loadInnerSdk";//入口方法名
-    private static String mSdkToolConfigName = "SdkToolConfig.xml";
-
-    private static int mClassCount = 5;//默认生成类的个数
-    private static int mMethodLowLimit = 4;//每个类中最少包含方法数
-    public static float mStaticRatio = 0.8F;//方法设置为static的比例，80表示80%
-    //================================================
-
     private static Map<String, String> mAllStringMap = new HashMap<>();//所有非空字符串的map，用于生成sdkToolConfig.xml
     private static ClassGroup mClassGroup;//所有类信息
     private static MethodGroup mMethodGroup;//所有方法信息
 
     public static JavaParser mJavaParser;//解析类对象
 
+    public static Config mConfig;//随机配置信息
+
 
     public static void main(String[] args) {
-        if (args.length > 0) {
-            mSrcPath = args[0];
+        if (args.length < 1) {
+            System.out.println("args length error");
+            return;
+        }
+        Gson gson = new Gson();
+        try {
+            mConfig = gson.fromJson(args[0], Config.class);
+        } catch (JsonSyntaxException e) {
+            System.out.println("json error");
+            return;
         }
 
-        File projectDir = new File(mSrcPath);
+        if (mConfig.getType() == 0) {
+            randomForeign();
+        } else if (mConfig.getType() == 1) {
+            randomQlj();
+        } else {
+            System.out.println("type error");
+        }
+
+
+    }
+
+    private static void randomQlj() {
+
+    }
+
+    private static void randomForeign() {
+        File projectDir = new File(mConfig.getSrcPath());
         if (!projectDir.exists()) {
             System.out.println("projectDir is not exist");
             return;
@@ -72,30 +88,30 @@ public class Main {
             System.out.println("there is no method");
             return;
         }
-        File outFileDir = new File(mOutPath + File.separator);
+        File outFileDir = new File(mConfig.getOutPath() + File.separator);
         initDir(outFileDir);
 
         ArrayList<MethodData> allMethods = mMethodGroup.getAllMethodAsList();
         Collections.shuffle(allMethods);//乱序
         //生成每个类的CompilationUnit
-        ArrayList<CompilationUnit> allClassUnits = GenerationOp.CompilationUnitGenerate(mClassCount, mPackageName, mPreClassName);
+        ArrayList<CompilationUnit> allClassUnits = GenerationOp.CompilationUnitGenerate(mConfig.getClassCount(), mConfig.getPackageName(), mConfig.getPreClassName());
         //分配每个类的方法个数
-        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(allMethods.size(), mMethodLowLimit, mClassCount);
+        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(allMethods.size(), mConfig.getMethodLowLimit(), mConfig.getClassCount());
         int methodIndex = 0;
         //记录方法被分配到的类
         for (int i = 0; i < allClassUnits.size(); i++) {
-            String classFileName = mPreClassName + i;
+            String classFileName = mConfig.getPreClassName() + i;
             int methodCount = methodCountMap.get(i);
             for (int j = 0; j < methodCount; j++) {
                 MethodData srcMethod = allMethods.get(methodIndex++);
                 srcMethod.setBelongToClass(classFileName);
             }
         }
-        XmlOp.buildXml(mOutPath + File.separator + mSdkToolConfigName, mClassCount, mPreClassName, mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mPackageName, mEntryMethodName);
+        XmlOp.buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
         methodIndex = 0;
         //把方法添加到类中
         for (int i = 0; i < allClassUnits.size(); i++) {
-            String classFileName = mPreClassName + i;
+            String classFileName = mConfig.getPreClassName() + i;
             CompilationUnit classUnit = allClassUnits.get(i);
             ClassOrInterfaceDeclaration thisClass = classUnit.getClassByName(classFileName).get();
             int methodCount = methodCountMap.get(i);
@@ -164,6 +180,7 @@ public class Main {
 
     /**
      * 创建所有类的数据集合
+     *
      * @param projectDir 资源目录
      */
     private static void buildClassesGroup(File projectDir) {
