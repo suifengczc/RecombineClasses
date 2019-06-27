@@ -13,22 +13,29 @@ import java.util.Map;
  */
 public class ClassGroup {
     private Map<String, ClassData> mClassDatas;//类名为key保存的map
+    private Map<String, InnerClassData> mInnerClassDatas;//内部类或接口的集合
     private ArrayList<ClassOrInterfaceDeclaration> allClasses;
 
     public ClassGroup(ArrayList<ClassOrInterfaceDeclaration> clzDeclarations) {
         this.allClasses = clzDeclarations;
         mClassDatas = new HashMap<>();
+        mInnerClassDatas = new HashMap<>();
         for (ClassOrInterfaceDeclaration clz : clzDeclarations) {
             buildClassDatas(clz);
         }
     }
 
     private void buildClassDatas(ClassOrInterfaceDeclaration clz) {
-        ClassData classData = new ClassData(clz);
-        mClassDatas.put(clz.getNameAsString(), classData);
+        if (clz.isNestedType()) {
+            InnerClassData innerClassData = new InnerClassData(clz,this);
+            mInnerClassDatas.put(clz.getNameAsString(), innerClassData);
+        } else {
+            ClassData classData = new ClassData(clz);
+            mClassDatas.put(clz.getNameAsString(), classData);
+        }
     }
 
-    public int getClassCount (){
+    public int getClassCount() {
         return mClassDatas.size();
     }
 

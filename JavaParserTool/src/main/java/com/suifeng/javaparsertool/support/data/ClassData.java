@@ -14,10 +14,16 @@ import java.util.ArrayList;
 public class ClassData {
     private ArrayList<String> imports;//class中导入的import类
     private ArrayList<MethodDeclaration> methods;//class中包含的methods
+    private ClassOrInterfaceDeclaration mClassDec;//类的原数据
+
+    public ClassOrInterfaceDeclaration getClassDec() {
+        return mClassDec;
+    }
 
     public ClassData(ClassOrInterfaceDeclaration clz) {
         imports = new ArrayList<>();
         methods = new ArrayList<>();
+        mClassDec = clz;
         NodeList<ImportDeclaration> importsList = ((CompilationUnit) clz.getParentNode().get()).getImports();
         for (ImportDeclaration ipt : importsList) {
             this.imports.add(ipt.getName().asString());

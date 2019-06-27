@@ -10,6 +10,8 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.suifeng.javaparsertool.Main;
+import com.suifeng.javaparsertool.support.utils.RandomUtil;
 import com.suifeng.javaparsertool.support.utils.Utils;
 
 import java.util.ArrayList;
@@ -20,7 +22,7 @@ import java.util.HashMap;
  */
 public class MethodData {
     private NodeList<Modifier> modifiers;//方法的修饰符
-    private boolean isStatic;//是否static方法
+    private boolean isStatic;//随机后是否static方法
     private String belongToClass;//随机后方法属于的类
     private String initialClass;//初始所在类
     private NodeList<Parameter> parameters;//方法的传参list
@@ -36,30 +38,38 @@ public class MethodData {
         buildMethodData(methodDeclaration, classGroup);
     }
 
+    /**
+     * @param methodDeclaration 方法定义
+     * @param classGroup        所有类数据
+     */
     private void buildMethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) {
         modifiers = methodDeclaration.getModifiers();
-        isStatic = false;
+        mMethodName = methodDeclaration.getNameAsString();
+        //提前指定随机后方法是否static
+        if (RandomUtil.randFloat() <= Main.mConfig.getStaticRatio() || Main.mConfig.getStaticMethod().contains(mMethodName)) {
+            isStatic = true;
+        } else {
+            isStatic = false;
+        }
         initialClass = ((TypeDeclaration) methodDeclaration.getParentNode().get()).getName().asString();
         mClassData = classGroup.getClassData(initialClass);
         mClassImports = new HashMap<>();
         mImports = new ArrayList<>();
-        mMethodName = methodDeclaration.getNameAsString();
         buildImports();
-        for (Modifier modifier : modifiers) {
-            if (Modifier.staticModifier().equals(modifier)) {
-                isStatic = true;
-            }
-        }
         parameters = methodDeclaration.getParameters();
     }
 
+    /**
+     * 创建method使用的import集合
+     */
     private void buildImports() {
         buildClassImports();
+        //遍历方法体获取所有使用到类的地方
         new VoidVisitorAdapter<Object>() {
             @Override
             public void visit(FieldAccessExpr n, Object arg) {
                 String fieldExpr = n.toString();
-                String scope = fieldExpr.substring(0,fieldExpr.indexOf("."));
+                String scope = fieldExpr.substring(0, fieldExpr.indexOf("."));
                 checkAndAddImport(scope);
                 super.visit(n, arg);
             }
@@ -67,9 +77,11 @@ public class MethodData {
             @Override
             public void visit(MethodCallExpr n, Object arg) {
                 //多层调用下getScope不准确
-                String expression = n.toString();
-                String scope = expression.substring(0, expression.indexOf("."));
-                checkAndAddImport(scope);
+                if (n.getScope().isPresent()) {
+                    String expression = n.toString();
+                    String scope = expression.substring(0, expression.indexOf("."));
+                    checkAndAddImport(scope);
+                }
 //                System.out.println("method call scope = " + scope);
                 super.visit(n, arg);
             }
@@ -100,6 +112,9 @@ public class MethodData {
 
     }
 
+    /**
+     * 把import以类名为key存储
+     */
     public void buildClassImports() {
         ArrayList<String> imports = mClassData.getImports();
         for (String anImport : imports) {
@@ -111,6 +126,11 @@ public class MethodData {
         }
     }
 
+    /**
+     * 添加import到mImports集合中
+     *
+     * @param type 类名
+     */
     public void checkAndAddImport(String type) {
         String anImport = mClassImports.get(type);
         if (!Utils.isStringEmpty(anImport) && !mImports.contains(anImport)) {
@@ -138,7 +158,7 @@ public class MethodData {
         return isStatic;
     }
 
-    public void setStatic(boolean b){
+    public void setStatic(boolean b) {
         this.isStatic = b;
     }
 

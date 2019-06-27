@@ -22,10 +22,12 @@ import com.suifeng.javaparsertool.support.config.Config;
 import com.suifeng.javaparsertool.support.data.ClassGroup;
 import com.suifeng.javaparsertool.support.data.MethodData;
 import com.suifeng.javaparsertool.support.data.MethodGroup;
+import com.suifeng.javaparsertool.support.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,7 +109,9 @@ public class Main {
                 srcMethod.setBelongToClass(classFileName);
             }
         }
-        XmlOp.buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
+        if (!Utils.isStringEmpty(mConfig.getConfigXmlName())) {
+            XmlOp.buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
+        }
         methodIndex = 0;
         //把方法添加到类中
         for (int i = 0; i < allClassUnits.size(); i++) {
@@ -185,6 +189,16 @@ public class Main {
      */
     private static void buildClassesGroup(File projectDir) {
         ArrayList<ClassOrInterfaceDeclaration> allClasses = ClassOp.getAllClasses(projectDir);
+        //把class排序，把内部类或内部接口放到后面，保证在处理内部类时父类已经处理好了
+        allClasses.sort((t0, t1) -> {
+            if ((t0.isNestedType() && t1.isNestedType()) || (!t0.isNestedType() && !t1.isNestedType())) {
+                return 0;
+            } else if (t0.isNestedType() && !t1.isNestedType()) {
+                return 1;
+            }else {
+                return -1;
+            }
+        });
         mClassGroup = new ClassGroup(allClasses);
     }
 

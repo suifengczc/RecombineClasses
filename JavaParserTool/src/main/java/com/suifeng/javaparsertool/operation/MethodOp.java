@@ -46,9 +46,8 @@ public class MethodOp {
         targetMethod.setAnnotations(srcMethod.getAnnotations());
         targetMethod.setThrownExceptions(srcMethod.getThrownExceptions());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
-        String methodName = targetMethod.getNameAsString();
         //修改方法修饰符
-        if (RandomUtil.randFloat() <= Main.mConfig.getStaticRatio() || Main.mConfig.getStaticMethod().contains(methodName)) {
+        if (srcMethodData.isStatic()) {
             NodeList<Modifier> modifierList = new NodeList<>();
             modifierList.add(Modifier.publicModifier());
             modifierList.add(Modifier.staticModifier());
