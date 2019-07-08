@@ -55,7 +55,6 @@ public class ClassOp {
                     @Override
                     public void visit(ClassOrInterfaceDeclaration n, Object arg) {
                         super.visit(n, arg);
-                        System.out.println(" * " + n.getName());
                         allClasses.add(n);
                     }
                 }.visit(Main.mJavaParser.parse(file).getResult().get(), null);

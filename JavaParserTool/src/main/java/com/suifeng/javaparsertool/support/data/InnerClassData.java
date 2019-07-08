@@ -25,6 +25,7 @@ public class InnerClassData {
     public InnerClassData(ClassOrInterfaceDeclaration clz, ClassGroup classGroup) {
         mClassDec = clz;
         mParentImports = new HashMap<>();
+        mImports = new ArrayList<>();
         mParentClz = ((ClassOrInterfaceDeclaration) clz.getParentNode().get()).getNameAsString();
         mParentClassData = classGroup.getClassData(mParentClz);
         buildInnerImports();

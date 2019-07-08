@@ -31,6 +31,7 @@ public class MethodData {
     private String mMethodName;//方法名称
     private ClassData mClassData;//初始所在类的ClassData
     private HashMap<String, String> mClassImports;//初始类的imports
+    private boolean canMove = true; // method是否可以移动到其他类中,不使用任何类私有变量或方法
 
 
     public MethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) {
@@ -46,7 +47,7 @@ public class MethodData {
         modifiers = methodDeclaration.getModifiers();
         mMethodName = methodDeclaration.getNameAsString();
         //提前指定随机后方法是否static
-        if (RandomUtil.randFloat() <= Main.mConfig.getStaticRatio() || Main.mConfig.getStaticMethod().contains(mMethodName)) {
+        if (RandomUtil.randFloat() <= Main.config.getStaticRatio() || Main.config.getStaticMethod().contains(mMethodName)) {
             isStatic = true;
         } else {
             isStatic = false;
@@ -57,6 +58,37 @@ public class MethodData {
         mImports = new ArrayList<>();
         buildImports();
         parameters = methodDeclaration.getParameters();
+        ArrayList<FieldData> fieldDatas = mClassData.getFieldDatas();
+        String methodBody = methodDeclaration.getBody().get().toString();
+        if (Main.config.getWhiteList().getKeepMethod().contains(mMethodName)) {
+            //配置列表中设置了不可移动
+            canMove = false;
+        } else {
+            for (FieldData fieldData : fieldDatas) {
+                if (fieldData.hasModifier(FieldData.MODIFIER_PRIVATE)) {
+                    String fieldName = fieldData.getFieldName();
+                    if (methodBody.contains(fieldName)) {
+                        canMove = false;//使用了类私有成员变量的方法不可以移动
+                        break;
+                    }
+                }
+            }
+            ArrayList<MethodDeclaration> methods = mClassData.getMethods();
+            for (MethodDeclaration method : methods) {
+                //判断当前method所在类的其他方法是否是private
+                NodeList<Modifier> modifiers = method.getModifiers();
+                boolean isPrivate = false;
+                for (Modifier modifier : modifiers) {
+                    if (modifier.equals(Modifier.privateModifier())) {
+                        isPrivate = true;
+                    }
+                }
+                if (isPrivate && methodBody.contains(method.getNameAsString())) {
+                    canMove = false;//使用了私有方法的method不可以移动
+                    break;
+                }
+            }
+        }
     }
 
     /**

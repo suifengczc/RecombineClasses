@@ -27,7 +27,6 @@ import com.suifeng.javaparsertool.support.utils.Utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +37,7 @@ public class Main {
 
     public static JavaParser mJavaParser;//解析类对象
 
-    public static Config mConfig;//随机配置信息
+    public static Config config;//随机配置信息
 
 
     public static void main(String[] args) {
@@ -48,15 +47,15 @@ public class Main {
         }
         Gson gson = new Gson();
         try {
-            mConfig = gson.fromJson(args[0], Config.class);
+            config = gson.fromJson(args[0], Config.class);
         } catch (JsonSyntaxException e) {
             System.out.println("json error");
             return;
         }
 
-        if (mConfig.getType() == 0) {
+        if (config.getType() == 0) {
             randomForeign();
-        } else if (mConfig.getType() == 1) {
+        } else if (config.getType() == 1) {
             randomQlj();
         } else {
             System.out.println("type error");
@@ -70,7 +69,7 @@ public class Main {
     }
 
     private static void randomForeign() {
-        File projectDir = new File(mConfig.getSrcPath());
+        File projectDir = new File(config.getSrcPath());
         if (!projectDir.exists()) {
             System.out.println("projectDir is not exist");
             return;
@@ -90,32 +89,32 @@ public class Main {
             System.out.println("there is no method");
             return;
         }
-        File outFileDir = new File(mConfig.getOutPath() + File.separator);
+        File outFileDir = new File(config.getOutPath() + File.separator);
         initDir(outFileDir);
 
         ArrayList<MethodData> allMethods = mMethodGroup.getAllMethodAsList();
         Collections.shuffle(allMethods);//乱序
         //生成每个类的CompilationUnit
-        ArrayList<CompilationUnit> allClassUnits = GenerationOp.CompilationUnitGenerate(mConfig.getClassCount(), mConfig.getPackageName(), mConfig.getPreClassName());
+        ArrayList<CompilationUnit> allClassUnits = GenerationOp.CompilationUnitGenerate(config.getClassCount(), config.getPackageName(), config.getPreClassName());
         //分配每个类的方法个数
-        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(allMethods.size(), mConfig.getMethodLowLimit(), mConfig.getClassCount());
+        Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(allMethods.size(), config.getMethodLowLimit(), config.getClassCount());
         int methodIndex = 0;
         //记录方法被分配到的类
         for (int i = 0; i < allClassUnits.size(); i++) {
-            String classFileName = mConfig.getPreClassName() + i;
+            String classFileName = config.getPreClassName() + i;
             int methodCount = methodCountMap.get(i);
             for (int j = 0; j < methodCount; j++) {
                 MethodData srcMethod = allMethods.get(methodIndex++);
                 srcMethod.setBelongToClass(classFileName);
             }
         }
-        if (!Utils.isStringEmpty(mConfig.getConfigXmlName())) {
-            XmlOp.getInstance(mConfig).buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
+        if (!Utils.isStringEmpty(config.getConfigXmlName())) {
+            XmlOp.getInstance(config).buildXml(config.getOutPath() + File.separator + config.getConfigXmlName(), config.getClassCount(), config.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), config.getPackageName(), config.getEntryMethod());
         }
         methodIndex = 0;
         //把方法添加到类中
         for (int i = 0; i < allClassUnits.size(); i++) {
-            String classFileName = mConfig.getPreClassName() + i;
+            String classFileName = config.getPreClassName() + i;
             CompilationUnit classUnit = allClassUnits.get(i);
             ClassOrInterfaceDeclaration thisClass = classUnit.getClassByName(classFileName).get();
             int methodCount = methodCountMap.get(i);
@@ -195,7 +194,7 @@ public class Main {
                 return 0;
             } else if (t0.isNestedType() && !t1.isNestedType()) {
                 return 1;
-            }else {
+            } else {
                 return -1;
             }
         });
@@ -206,8 +205,7 @@ public class Main {
      * 创建所有方法的数据集合
      */
     private static void buildMethodGroup() {
-        ArrayList<MethodDeclaration> allMethods = mClassGroup.getAllMethods();
-        mMethodGroup = new MethodGroup(allMethods, mClassGroup);
+        mMethodGroup = new MethodGroup(mClassGroup);
     }
 
 

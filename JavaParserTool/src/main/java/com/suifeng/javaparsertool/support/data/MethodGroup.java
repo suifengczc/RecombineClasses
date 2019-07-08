@@ -14,9 +14,10 @@ public class MethodGroup {
     private ArrayList<String> allMethodNames;//所有方法的方法名
     private Map<String, MethodData> mMethodDatas;//以方法名为key保存的MethodData
 
-    public MethodGroup(ArrayList<MethodDeclaration> allMethod,ClassGroup classGroup) {
+    public MethodGroup(ClassGroup classGroup) {
         allMethodNames = new ArrayList<>();
         mMethodDatas = new HashMap<>();
+        ArrayList<MethodDeclaration> allMethod = classGroup.getAllMethods();
         buildMethodDatas(allMethod,classGroup);
     }
 
