@@ -18,6 +18,7 @@ import com.suifeng.javaparsertool.operation.ClassOp;
 import com.suifeng.javaparsertool.operation.GenerationOp;
 import com.suifeng.javaparsertool.operation.MethodOp;
 import com.suifeng.javaparsertool.operation.XmlOp;
+import com.suifeng.javaparsertool.support.Distribute.DistributeHelper;
 import com.suifeng.javaparsertool.support.config.Config;
 import com.suifeng.javaparsertool.support.data.ClassGroup;
 import com.suifeng.javaparsertool.support.data.MethodData;
@@ -27,8 +28,10 @@ import com.suifeng.javaparsertool.support.utils.Utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class Main {
     private static Map<String, String> mAllStringMap = new HashMap<>();//所有非空字符串的map，用于生成sdkToolConfig.xml
@@ -39,26 +42,29 @@ public class Main {
 
     public static Config config;//随机配置信息
 
-
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("args length error");
-            return;
-        }
-        Gson gson = new Gson();
         try {
-            config = gson.fromJson(args[0], Config.class);
-        } catch (JsonSyntaxException e) {
-            System.out.println("json error");
-            return;
-        }
+            if (args.length < 1) {
+                System.out.println("args length error");
+                return;
+            }
+            Gson gson = new Gson();
+            try {
+                config = gson.fromJson(args[0], Config.class);
+            } catch (JsonSyntaxException e) {
+                System.out.println("json error");
+                return;
+            }
 
-        if (config.getType() == 0) {
-            randomForeign();
-        } else if (config.getType() == 1) {
-            randomQlj();
-        } else {
-            System.out.println("type error");
+            if (config.getType() == 0) {
+                randomForeign();
+            } else if (config.getType() == 1) {
+                randomQlj();
+            } else {
+                System.out.println("type error");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
 
@@ -68,7 +74,7 @@ public class Main {
 
     }
 
-    private static void randomForeign() {
+    private static void randomForeign() throws Exception {
         File projectDir = new File(config.getSrcPath());
         if (!projectDir.exists()) {
             System.out.println("projectDir is not exist");
@@ -92,10 +98,19 @@ public class Main {
         File outFileDir = new File(config.getOutPath() + File.separator);
         initDir(outFileDir);
 
+
+        GenerationOp.generateOutClz(config, mClassGroup, mMethodGroup);
+        /*
+
         ArrayList<MethodData> allMethods = mMethodGroup.getAllMethodAsList();
         Collections.shuffle(allMethods);//乱序
         //生成每个类的CompilationUnit
-        ArrayList<CompilationUnit> allClassUnits = GenerationOp.CompilationUnitGenerate(config.getClassCount(), config.getPackageName(), config.getPreClassName());
+        try {
+            new DistributeHelper(config, mClassGroup, mMethodGroup);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ArrayList<CompilationUnit> allClassUnits = GenerationOp.compilationUnitGenerate(config.getClassCount(), config.getPackageName(), config.getPreClassName());
         //分配每个类的方法个数
         Map<Integer, Integer> methodCountMap = ClassOp.getMethodCountInClasses(allMethods.size(), config.getMethodLowLimit(), config.getClassCount());
         int methodIndex = 0;
@@ -105,7 +120,7 @@ public class Main {
             int methodCount = methodCountMap.get(i);
             for (int j = 0; j < methodCount; j++) {
                 MethodData srcMethod = allMethods.get(methodIndex++);
-                srcMethod.setBelongToClass(classFileName);
+                srcMethod.setSendToClass(classFileName);
             }
         }
         if (!Utils.isStringEmpty(config.getConfigXmlName())) {
@@ -134,6 +149,7 @@ public class Main {
                 ClassOp.generalClassFile(outFileDir, classFileName + ".java", classUnit);
             }
         }
+        */
     }
 
     /**
@@ -186,25 +202,37 @@ public class Main {
      *
      * @param projectDir 资源目录
      */
-    private static void buildClassesGroup(File projectDir) {
-        ArrayList<ClassOrInterfaceDeclaration> allClasses = ClassOp.getAllClasses(projectDir);
+    private static void buildClassesGroup(File projectDir) throws Exception {
+//        ArrayList<ClassOrInterfaceDeclaration> allClasses = ClassOp.getAllClasses(projectDir);
+        ArrayList<CompilationUnit> allUnit = ClassOp.getAllUnits(projectDir);
         //把class排序，把内部类或内部接口放到后面，保证在处理内部类时父类已经处理好了
-        allClasses.sort((t0, t1) -> {
-            if ((t0.isNestedType() && t1.isNestedType()) || (!t0.isNestedType() && !t1.isNestedType())) {
-                return 0;
-            } else if (t0.isNestedType() && !t1.isNestedType()) {
+        TreeMap<ClassOrInterfaceDeclaration, CompilationUnit> map = new TreeMap<>((t0, t1) -> {
+//            if ((t0.isNestedType() && t1.isNestedType()) || (!t0.isNestedType() && !t1.isNestedType())) {
+//                return 0;
+//            } else
+            if (t0.isNestedType() && !t1.isNestedType()) {
                 return 1;
             } else {
                 return -1;
             }
         });
-        mClassGroup = new ClassGroup(allClasses);
+        for (CompilationUnit unit : allUnit) {
+            new VoidVisitorAdapter<Object>() {
+                @Override
+                public void visit(ClassOrInterfaceDeclaration n, Object arg) {
+                    map.put(n, unit);
+                    super.visit(n, arg);
+                }
+            }.visit(unit, null);
+        }
+
+        mClassGroup = new ClassGroup(map);
     }
 
     /**
      * 创建所有方法的数据集合
      */
-    private static void buildMethodGroup() {
+    private static void buildMethodGroup() throws Exception {
         mMethodGroup = new MethodGroup(mClassGroup);
     }
 

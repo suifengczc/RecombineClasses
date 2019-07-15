@@ -19,9 +19,7 @@ import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclar
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.model.resolution.SymbolReference;
 import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
-import com.suifeng.javaparsertool.Main;
 import com.suifeng.javaparsertool.support.data.MethodData;
-import com.suifeng.javaparsertool.support.utils.RandomUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,8 +33,8 @@ public class MethodOp {
     /**
      * 复制方法
      *
-     * @param srcMethodData
-     * @param targetMethod
+     * @param srcMethodData method数据源
+     * @param targetMethod 目标method
      */
     public static void cloneMethod(MethodData srcMethodData, MethodDeclaration targetMethod) {
         MethodDeclaration srcMethod = srcMethodData.getOriginData();
@@ -46,27 +44,26 @@ public class MethodOp {
         targetMethod.setAnnotations(srcMethod.getAnnotations());
         targetMethod.setThrownExceptions(srcMethod.getThrownExceptions());
         targetMethod.setAnnotations(srcMethod.getAnnotations());
+//        targetMethod.setJavadocComment(srcMethod.getJavadoc().get());
         //修改方法修饰符
         if (srcMethodData.isStatic()) {
             NodeList<Modifier> modifierList = new NodeList<>();
             modifierList.add(Modifier.publicModifier());
             modifierList.add(Modifier.staticModifier());
             targetMethod.setModifiers(modifierList);
-            srcMethodData.setStatic(true);
-        }else{
+        } else {
             NodeList<Modifier> modifierList = new NodeList<>();
             modifierList.add(Modifier.publicModifier());
             targetMethod.setModifiers(modifierList);
-            srcMethodData.setStatic(false);
         }
     }
 
     /**
-     * 遍历方法中的所有调用语句，设置正确的caller
+     * 遍历method中的所有调用语句，设置正确的caller
      *
-     * @param method
-     * @param allMethods
-     * @param methodData
+     * @param method 被修改方法
+     * @param allMethods 方法名集合
+     * @param methodData methodData集合
      */
     public static void setMethodScope(MethodDeclaration method, ArrayList<String> allMethods, Map<String, MethodData> methodData) {
         new VoidVisitorAdapter<Object>() {
@@ -75,7 +72,7 @@ public class MethodOp {
                 super.visit(callExpr, arg);
                 String beCalledMethod = callExpr.getName().asString();
                 if (allMethods.contains(beCalledMethod)) {
-                    String className = methodData.get(beCalledMethod).getBelongToClass();
+                    String className = methodData.get(beCalledMethod).getSendToClass();
                     boolean isStatic = methodData.get(beCalledMethod).isStatic();
                     if (isStatic) {
                         callExpr.setScope(new NameExpr(className));
@@ -90,12 +87,12 @@ public class MethodOp {
     public static void modifyMethodsParamsName(File projectDir, ArrayList<MethodDeclaration> allMethods) {
         for (MethodDeclaration method : allMethods) {
             String methodName = method.getName().asString();
-            new VoidVisitorAdapter<Object>(){
+            new VoidVisitorAdapter<Object>() {
                 @Override
                 public void visit(Parameter parameter, Object arg) {
                     super.visit(parameter, arg);
                     String parameterName = parameter.getName().asString();
-                    parameter.setName(methodName+"_"+parameterName);
+                    parameter.setName(methodName + "_" + parameterName);
                 }
 
                 @Override
@@ -137,12 +134,12 @@ public class MethodOp {
                             NameExpr nameExpr = ((ArrayAccessExpr) target).getName().asNameExpr();
                             String name = nameExpr.getNameAsString();
                             nameExpr.setName(methodName + "_" + name);
-                        }else if (target instanceof NameExpr){
+                        } else if (target instanceof NameExpr) {
                             SimpleName simpleName = ((NameExpr) target).getName();
                             String name = simpleName.asString();
-                            simpleName.setIdentifier(methodName + "_"+name);
-                        }else{
-                            System.out.println("nameExpr else ---> "+"expression instanceof AssignExpr");
+                            simpleName.setIdentifier(methodName + "_" + name);
+                        } else {
+                            System.out.println("nameExpr else ---> " + "expression instanceof AssignExpr");
                         }
                     } else if (expression instanceof UnaryExpr) {
 
@@ -163,7 +160,7 @@ public class MethodOp {
 //                        }
 //                    }
                 }
-            }.visit(method,null);
+            }.visit(method, null);
         }
 
     }

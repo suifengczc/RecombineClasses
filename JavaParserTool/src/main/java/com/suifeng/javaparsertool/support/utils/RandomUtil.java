@@ -17,6 +17,12 @@ public class RandomUtil {
         return _rand.nextBoolean();
     }
 
+    /**
+     * 生成[min,max]的int值，前后闭区间
+     * @param min 随机最小范围
+     * @param max 随机最大范围
+     * @return 随机的int值
+     */
     public static int randInt(int min, int max) {
         return _rand.nextInt(max - min + 1) + min;
     }

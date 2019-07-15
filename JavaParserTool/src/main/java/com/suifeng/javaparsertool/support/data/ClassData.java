@@ -2,6 +2,7 @@ package com.suifeng.javaparsertool.support.data;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -18,16 +19,26 @@ public class ClassData {
     private ArrayList<MethodDeclaration> methods;//class中包含的methods
     private ClassOrInterfaceDeclaration mClassDec;//类的原数据
     private ArrayList<FieldData> mFieldDatas;//成员变量
+    private NodeList<Modifier> mModifier;//类的修饰符
+    private String mPackageName;//包名
+    private CompilationUnit mUnit;//所在类的CompilationUnit
 
     public ClassOrInterfaceDeclaration getClassDec() {
         return mClassDec;
     }
 
     public ClassData(ClassOrInterfaceDeclaration clz) {
+        this(clz, null);
+    }
+
+    public ClassData(ClassOrInterfaceDeclaration clz, CompilationUnit unit) {
+        mUnit = unit;
         imports = new ArrayList<>();
         methods = new ArrayList<>();
         mFieldDatas = new ArrayList<>();
         mClassDec = clz;
+        mModifier = clz.getModifiers();
+
         NodeList<ImportDeclaration> importsList = ((CompilationUnit) clz.getParentNode().get()).getImports();
         for (ImportDeclaration ipt : importsList) {
             this.imports.add(ipt.getName().asString());
@@ -69,7 +80,7 @@ public class ClassData {
         return names;
     }
 
-    public ArrayList<FieldData> getFieldDatas(){
+    public ArrayList<FieldData> getFieldDatas() {
         return mFieldDatas;
     }
 

@@ -1,10 +1,13 @@
 package com.suifeng.javaparsertool.support.data;
 
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.suifeng.javaparsertool.support.utils.Utils;
+
+import org.checkerframework.checker.interning.qual.UnknownInterned;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,8 +24,14 @@ public class InnerClassData {
 
     private ArrayList<String> mImports;//内部类涉及到的导入
     private Map<String, String> mParentImports;//父类的导入
+    private CompilationUnit mUnit;//类所在的CompilationUnit
 
-    public InnerClassData(ClassOrInterfaceDeclaration clz, ClassGroup classGroup) {
+    public InnerClassData(ClassOrInterfaceDeclaration clz, ClassGroup classGroup) throws Exception {
+        this(clz, classGroup, null);
+    }
+
+    public InnerClassData(ClassOrInterfaceDeclaration clz, ClassGroup classGroup, CompilationUnit unit) throws Exception {
+        this.mUnit = unit;
         mClassDec = clz;
         mParentImports = new HashMap<>();
         mImports = new ArrayList<>();

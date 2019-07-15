@@ -14,14 +14,14 @@ public class MethodGroup {
     private ArrayList<String> allMethodNames;//所有方法的方法名
     private Map<String, MethodData> mMethodDatas;//以方法名为key保存的MethodData
 
-    public MethodGroup(ClassGroup classGroup) {
+    public MethodGroup(ClassGroup classGroup) throws Exception {
         allMethodNames = new ArrayList<>();
         mMethodDatas = new HashMap<>();
         ArrayList<MethodDeclaration> allMethod = classGroup.getAllMethods();
         buildMethodDatas(allMethod,classGroup);
     }
 
-    private void buildMethodDatas(ArrayList<MethodDeclaration> allMethod,ClassGroup classGroup) {
+    private void buildMethodDatas(ArrayList<MethodDeclaration> allMethod,ClassGroup classGroup) throws Exception {
         for (MethodDeclaration methodDeclaration : allMethod) {
             MethodData methodData = new MethodData(methodDeclaration, classGroup);
             String methodName = methodDeclaration.getNameAsString();

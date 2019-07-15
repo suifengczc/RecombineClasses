@@ -16,14 +16,15 @@ import com.suifeng.javaparsertool.support.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * 方法数据类,方便获取MethodDeclaration的参数
  */
 public class MethodData {
-    private NodeList<Modifier> modifiers;//方法的修饰符
+    private NodeList<Modifier> mModifiers;//方法的修饰符
     private boolean isStatic;//随机后是否static方法
-    private String belongToClass;//随机后方法属于的类
+    private String sendToClass;//随机后方法属于的类
     private String initialClass;//初始所在类
     private NodeList<Parameter> parameters;//方法的传参list
     private MethodDeclaration mMethodDeclaration;
@@ -31,10 +32,10 @@ public class MethodData {
     private String mMethodName;//方法名称
     private ClassData mClassData;//初始所在类的ClassData
     private HashMap<String, String> mClassImports;//初始类的imports
-    private boolean canMove = true; // method是否可以移动到其他类中,不使用任何类私有变量或方法
+    public boolean canMove = true; // method是否可以移动到其他类中,不使用任何类私有变量或方法
 
 
-    public MethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) {
+    public MethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) throws Exception {
         this.mMethodDeclaration = methodDeclaration;
         buildMethodData(methodDeclaration, classGroup);
     }
@@ -43,10 +44,10 @@ public class MethodData {
      * @param methodDeclaration 方法定义
      * @param classGroup        所有类数据
      */
-    private void buildMethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) {
-        modifiers = methodDeclaration.getModifiers();
+    private void buildMethodData(MethodDeclaration methodDeclaration, ClassGroup classGroup) throws Exception {
+        mModifiers = methodDeclaration.getModifiers();
         mMethodName = methodDeclaration.getNameAsString();
-        //提前指定随机后方法是否static
+        //指定随机后方法是否static
         if (RandomUtil.randFloat() <= Main.config.getStaticRatio() || Main.config.getStaticMethod().contains(mMethodName)) {
             isStatic = true;
         } else {
@@ -60,12 +61,12 @@ public class MethodData {
         parameters = methodDeclaration.getParameters();
         ArrayList<FieldData> fieldDatas = mClassData.getFieldDatas();
         String methodBody = methodDeclaration.getBody().get().toString();
-        if (Main.config.getWhiteList().getKeepMethod().contains(mMethodName)) {
-            //配置列表中设置了不可移动
+        if (Main.config.getWhiteList().getKeepMethod().contains(mMethodName) || hasModifier(Modifier.privateModifier()) || hasModifier(Modifier.protectedModifier())) {
+            //配置列表中设置了不可移动或者method本身是private的或者method本身是protected
             canMove = false;
         } else {
             for (FieldData fieldData : fieldDatas) {
-                if (fieldData.hasModifier(FieldData.MODIFIER_PRIVATE)) {
+                if (fieldData.hasModifier(Modifier.privateModifier()) || fieldData.hasModifier(Modifier.protectedModifier())) {
                     String fieldName = fieldData.getFieldName();
                     if (methodBody.contains(fieldName)) {
                         canMove = false;//使用了类私有成员变量的方法不可以移动
@@ -75,11 +76,11 @@ public class MethodData {
             }
             ArrayList<MethodDeclaration> methods = mClassData.getMethods();
             for (MethodDeclaration method : methods) {
-                //判断当前method所在类的其他方法是否是private
+                //判断是否调用了当前类的其他private或protected方法
                 NodeList<Modifier> modifiers = method.getModifiers();
                 boolean isPrivate = false;
                 for (Modifier modifier : modifiers) {
-                    if (modifier.equals(Modifier.privateModifier())) {
+                    if (modifier.equals(Modifier.privateModifier()) || modifier.equals(Modifier.protectedModifier())) {
                         isPrivate = true;
                     }
                 }
@@ -89,6 +90,10 @@ public class MethodData {
                 }
             }
         }
+        if (!canMove) {
+            classGroup.addHoldClass(initialClass);
+        }
+
     }
 
     /**
@@ -170,6 +175,18 @@ public class MethodData {
         }
     }
 
+    public boolean hasModifier(Modifier modifier) {
+        return mModifiers.contains(modifier);
+    }
+
+    public List<Modifier> getModifiers() {
+        return mModifiers;
+    }
+
+    public String getInitialClass() {
+        return initialClass;
+    }
+
     public String getName() {
         return mMethodName;
     }
@@ -178,12 +195,12 @@ public class MethodData {
         return mImports;
     }
 
-    public String getBelongToClass() {
-        return belongToClass;
+    public String getSendToClass() {
+        return sendToClass;
     }
 
-    public void setBelongToClass(String belongToClass) {
-        this.belongToClass = belongToClass;
+    public void setSendToClass(String sendToClass) {
+        this.sendToClass = sendToClass;
     }
 
     public boolean isStatic() {

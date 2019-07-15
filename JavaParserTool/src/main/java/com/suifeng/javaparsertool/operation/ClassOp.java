@@ -29,8 +29,13 @@ public class ClassOp {
      */
     public static void generalClassFile(File outFileDir, String className, CompilationUnit classFile) {
         try {
+            if (outFileDir != null && !outFileDir.exists()) {
+                outFileDir.mkdirs();
+            }
             File outClassFile = new File(outFileDir, className);
-            outClassFile.createNewFile();
+            if (!outClassFile.exists()) {
+                outClassFile.createNewFile();
+            }
             FileOutputStream fops = new FileOutputStream(outClassFile);
             fops.write(classFile.toString().getBytes());
             fops.flush();
@@ -64,6 +69,32 @@ public class ClassOp {
             }
         }).explore(projectDir);
         return allClasses;
+    }
+
+    /**
+     * 返回源码目录下所有的CompilationUnit
+     *
+     * @param projectDir 源码目录
+     */
+    public static ArrayList<CompilationUnit> getAllUnits(File projectDir) {
+        ArrayList<CompilationUnit> allUnit = new ArrayList<>();
+        new DirExplorer((level, path, file) -> path.endsWith(".java"), (level, path, file) -> {
+            System.out.println(path);
+            System.out.println(Strings.repeat("=", path.length()));
+            try {
+                new VoidVisitorAdapter<Object>() {
+                    @Override
+                    public void visit(CompilationUnit n, Object arg) {
+                        super.visit(n, arg);
+                        allUnit.add(n);
+                    }
+                }.visit(Main.mJavaParser.parse(file).getResult().get(), null);
+                System.out.println();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).explore(projectDir);
+        return allUnit;
     }
 
     /**
