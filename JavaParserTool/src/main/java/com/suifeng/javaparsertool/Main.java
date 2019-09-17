@@ -110,7 +110,7 @@ public class Main {
             }
         }
         if (!Utils.isStringEmpty(mConfig.getConfigXmlName())) {
-            XmlOp.buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
+            XmlOp.getInstance(mConfig).buildXml(mConfig.getOutPath() + File.separator + mConfig.getConfigXmlName(), mConfig.getClassCount(), mConfig.getPreClassName(), mMethodGroup.getAllMethodNames(), mAllStringMap, mMethodGroup.getAllMethodMap(), mConfig.getPackageName(), mConfig.getEntryMethod());
         }
         methodIndex = 0;
         //把方法添加到类中

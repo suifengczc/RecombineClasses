@@ -1,5 +1,6 @@
 package com.suifeng.javaparsertool.operation;
 
+import com.suifeng.javaparsertool.support.config.Config;
 import com.suifeng.javaparsertool.support.data.MethodData;
 import com.suifeng.javaparsertool.support.MyXmlWriter;
 import com.suifeng.javaparsertool.support.utils.RandomUtil;
@@ -22,11 +23,29 @@ import java.util.Map;
  */
 public class XmlOp {
 
+    public static XmlOp instance ;
+
+    public static XmlOp getInstance(Config config){
+        if (instance == null) {
+            instance = new XmlOp(config);
+        }
+        return instance;
+    }
+
+    private XmlOp(Config config) {
+        this.mConfig = config;
+    }
+
+    private static Config mConfig;
+
+
     private static final String[] PLUGIN_ARRAY = {"web", "dsp", "live", "appleid", "AZeroPlug", "IFirstPlug", "LSecondPlug", "NThreePlug", "CFivePlug", "FSixPlug", "VEightPlug", "TNinePlug", "BTenPlug", "MElevenPlug", "PTwelvePlug", "AThirteenPlug", "BasicLibrary", "AssetName", "PluginConfig", "VirName"};
     private static final String[] OTHERS_ARRAY = {"ForeignCount", "PluginsDir", "PluginFile", "DownloadDB", "NowData", "ApiInfo", "PathChange", "DownloadDBNew", "XNJ", "VirtualEnc", "DataEnc", "OptEnc", "UserEnc", "Mob"};
     private static final String[] ENCRYPT_ARRAY = {"IFirstPlug", "LSecondPlug", "NThreePlug", "CFivePlug", "FSixPlug", "VEightPlug", "TNinePlug", "BTenPlug", "MElevenPlug"};
     private static int addFileCount = 3;//添加文件的个数
     private static int pluginDirCount = 3;//插件路径个数
+
+//    private static boolean checkDir = false;
 
     /**
      * 生成SdkToolConfig.xml文件
@@ -40,7 +59,7 @@ public class XmlOp {
      * @param mPackageName        包名
      * @param mEntryMethodName    入口方法名
      */
-    public static void buildXml(String xmlOutPath, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName) {
+    public  void buildXml(String xmlOutPath, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName) {
         try {
             // 创建document对象
             Document document = DocumentHelper.createDocument();
@@ -76,12 +95,19 @@ public class XmlOp {
 
             //FastSdkApplication的配置
             Element editSdkCodeElement = configElement.addElement("EditSdkCode");
-            setEditSdkCodeElement(editSdkCodeElement, mAllMethodDataMap, mPackageName, mEntryMethodName, mAllStringMap);
+            setEditSdkCodeElement(editSdkCodeElement, mAllMethodDataMap, preClassName, mPackageName, classCount, mEntryMethodName, mAllStringMap);
 
             //各个class配置
             for (int i = 0; i < classCount; i++) {
                 Element classElement = configElement.addElement("EditSdkCode");
                 setClassElement(classElement, i, preClassName, mPackageName, classCount, mAllMethodsNameList, mAllStringMap);
+            }
+
+            if (mConfig.isCheckDir()) {
+                Element exClassElement_1 = configElement.addElement("EditSdkCode");
+                setExtraClassElement(exClassElement_1, "CheckListener", preClassName, mPackageName, classCount, mAllMethodsNameList, mAllStringMap);
+                Element exClassElement_2 = configElement.addElement("EditSdkCode");
+                setExtraClassElement(exClassElement_2, "HoldService", preClassName, mPackageName, classCount, mAllMethodsNameList, mAllStringMap);
             }
 
             //设置WriteConfig节点
@@ -133,7 +159,7 @@ public class XmlOp {
     }
 
 
-    private static void setSetupElement(Element setupElement, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList) {
+    private void setSetupElement(Element setupElement, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList) {
         setupElement.addAttribute("Name", "Setup");
 
         Element sourceElement = setupElement.addElement("Source");
@@ -150,6 +176,21 @@ public class XmlOp {
             sourceElement.addAttribute("Name", preClassName + i);
             sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
         }
+
+        if (mConfig.isCheckDir()) {
+            sourceElement = setupElement.addElement("Source");
+            sourceElement.addAttribute("Name", "CheckListener");
+            sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
+
+            sourceElement = setupElement.addElement("Source");
+            sourceElement.addAttribute("Name", "HoldService");
+            sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
+
+            sourceElement = setupElement.addElement("Source");
+            sourceElement.addAttribute("Name", "HoldServiceAction");
+            sourceElement.addAttribute("Value", "${%packagename}" + RandomUtil.getMultRandConfig(".", null, 1, 3, true));
+        }
+
 
         for (String method : mAllMethodsNameList) {
             int i = RandomUtil.randInt(1, 5);
@@ -216,7 +257,7 @@ public class XmlOp {
 
     }
 
-    private static void setConfigRunInfoElement(Element configRunInfoElement, Map<String, String> mAllStringMap) {
+    private void setConfigRunInfoElement(Element configRunInfoElement, Map<String, String> mAllStringMap) {
         configRunInfoElement.addAttribute("Name", "AddParameter");
         configRunInfoElement.addAttribute("Lazy", "");
         configRunInfoElement.addAttribute("NoUpperageLimit", "true");
@@ -231,7 +272,7 @@ public class XmlOp {
         }
     }
 
-    private static void setEditConfigElement(Element editConfigElement) {
+    private void setEditConfigElement(Element editConfigElement) {
         editConfigElement.addAttribute("IsPre", "true");
         editConfigElement.addAttribute("Name", "AddMapping");
         editConfigElement.addAttribute("SdkPlace", "BackgroundService");
@@ -294,7 +335,7 @@ public class XmlOp {
         editConfigElement.addAttribute("VirName", "");
     }
 
-    private static void setEditCompMappingElement(Element editCompMappingElement) {
+    private void setEditCompMappingElement(Element editCompMappingElement) {
         editCompMappingElement.addAttribute("IsPre", "true");
         editCompMappingElement.addAttribute("Name", "AddCompMapping");
         editCompMappingElement.addAttribute("NActivity", "com.os.op.NActivity");
@@ -384,7 +425,7 @@ public class XmlOp {
         editCompMappingElement.addAttribute("C19StubContentProvider", "com.tmk.ywb.service.StubContentProvider$C19");
     }
 
-    private static void setEditManifestElement(Element editManifestElement) {
+    private void setEditManifestElement(Element editManifestElement) {
         editManifestElement.addAttribute("IsPre", "true");
         editManifestElement.addAttribute("Name", "AndroidManifest.xml");
         editManifestElement.addAttribute("StubActivityCount", "" + RandomUtil.randInt(9, 20));
@@ -395,11 +436,13 @@ public class XmlOp {
         editManifestElement.addAttribute("AddReceiverCount", "0,0");
     }
 
-    private static void setEditSdkCodeElement(Element editSdkCodeElement, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName, Map<String, String> mAllStringMap) {
+    private void setEditSdkCodeElement(Element editSdkCodeElement, Map<String, MethodData> mAllMethodDataMap, String perClassName, String mPackageName, int classCount, String mEntryMethodName, Map<String, String> mAllStringMap) {
         editSdkCodeElement.addAttribute("Name", "FastSdkApplication");
         editSdkCodeElement.addAttribute("ClassName", mPackageName + "." + "FastSdkApplication");
-        String className = mAllMethodDataMap.get(mEntryMethodName).getBelongToClass();
-        editSdkCodeElement.addAttribute("Class." + className, mPackageName + "." + className);
+//        String className = mAllMethodDataMap.get(mEntryMethodName).getBelongToClass();
+        for (int i = 0; i < classCount; i++) {
+            editSdkCodeElement.addAttribute("Class." + perClassName + i, mPackageName + "." + perClassName + i);
+        }
         editSdkCodeElement.addAttribute("Pattern." + Utils.upperCaseChar(mEntryMethodName, 0), mEntryMethodName);
         editSdkCodeElement.addAttribute("OSB." + mAllStringMap.get("noIdea"), "noIdea");
         editSdkCodeElement.addAttribute("OSB." + mAllStringMap.get("loadAttachContext"), "loadAttachContext");
@@ -408,7 +451,7 @@ public class XmlOp {
 
     }
 
-    private static void setClassElement(Element classElement, int i, String preClassName, String mPackageName, int classCount, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap) {
+    private void setClassElement(Element classElement, int i, String preClassName, String mPackageName, int classCount, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap) {
         classElement.addAttribute("Name", preClassName + i);
         classElement.addAttribute("ClassName", mPackageName + "." + preClassName + i);
         classElement.addAttribute("TargetName", preClassName + i);
@@ -416,6 +459,37 @@ public class XmlOp {
             if (j != i) {
                 classElement.addAttribute("Class.ClassName" + j, mPackageName + "." + preClassName + j);
             }
+        }
+        if (mConfig.isCheckDir()) {
+            classElement.addAttribute("Class.CheckListener", "com.dmy.CheckListener");
+            classElement.addAttribute("Class.HoldService", "com.dmy.HoldService");
+        }
+
+        for (int j = 0; j < mAllMethodsNameList.size(); j++) {
+            String methodName = mAllMethodsNameList.get(j);
+            classElement.addAttribute("Pattern." + Utils.upperCaseChar(methodName, 0), methodName);
+        }
+
+        Iterator<String> iterator = mAllStringMap.keySet().iterator();
+        while (iterator.hasNext()) {
+            String next = iterator.next();
+            classElement.addAttribute("OSB." + mAllStringMap.get(next), next);
+        }
+        classElement.addAttribute("OSBKey", "");
+
+    }
+
+    private void setExtraClassElement(Element classElement, String className, String preClassName, String mPackageName, int classCount, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap) {
+        classElement.addAttribute("Name", className);
+        classElement.addAttribute("ClassName", mPackageName + "." + className);
+        classElement.addAttribute("TargetName", className);
+        for (int j = 0; j < classCount; j++) {
+            classElement.addAttribute("Class.ClassName" + j, mPackageName + "." + preClassName + j);
+        }
+        if (className.equalsIgnoreCase("CheckListener")) {
+            classElement.addAttribute("Class.HoldService", "com.dmy.HoldService");
+        } else {
+            classElement.addAttribute("Class.CheckListener", "com.dmy.CheckListener");
         }
 
         for (int j = 0; j < mAllMethodsNameList.size(); j++) {
@@ -433,12 +507,12 @@ public class XmlOp {
 
     }
 
-    private static void setWriteConfigElement(Element writeConfigElement) {
+    private void setWriteConfigElement(Element writeConfigElement) {
         writeConfigElement.addAttribute("Name", "assets/pc.cg");
         writeConfigElement.addAttribute("UseConfig", "true");
     }
 
-    private static void setencryptElement(Element encryptElement, String str) {
+    private void setencryptElement(Element encryptElement, String str) {
         encryptElement.addAttribute("Name", "assets/" + str);
         if ("basic".equals(str)) {
             str = "BasicLibrary";
@@ -447,7 +521,7 @@ public class XmlOp {
         encryptElement.addAttribute("Cmd", "java -jar bin\\classes.jar encrypt $(src) $(tar) 379");
     }
 
-    private static void setLastEncryptElement(Element configElement) {
+    private void setLastEncryptElement(Element configElement) {
         Element encryptElement = configElement.addElement("Encrypt");
 
         encryptElement.addAttribute("Name", "assets/appleid");
@@ -500,7 +574,7 @@ public class XmlOp {
         cmdElement.addAttribute("Line", "java -jar bin\\filesecurity.jar encrypt $(src) $(tar) 179");
     }
 
-    private static void setWriteRunInfoElement(Element configElement) {
+    private void setWriteRunInfoElement(Element configElement) {
         Element writeRunInfoElement = configElement.addElement("WriteRunInfo");
         writeRunInfoElement.addAttribute("Name", "assets/rm");
         writeRunInfoElement.addAttribute("MoveName", "FileName");
@@ -508,7 +582,7 @@ public class XmlOp {
         writeRunInfoElement.addAttribute("NewNative", "true");
     }
 
-    private static void setAddFileElemenet(Element configElement) {
+    private void setAddFileElemenet(Element configElement) {
         for (int i = 0; i < addFileCount; i++) {
             Element addFileElement = configElement.addElement("AddFile");
             addFileElement.addAttribute("Name", "apk:///assets/");

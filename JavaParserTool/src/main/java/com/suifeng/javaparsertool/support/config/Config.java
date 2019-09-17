@@ -7,23 +7,25 @@ import java.util.List;
 public class Config {
     /**
      * type : 0
+     * check_dir : false
      * src_path : source_in
      * out_path : source_out
      * package_name : com.dmy
-     * pre_class_name : classname
-     * entry_method : loadInnerSdk
+     * pre_class_name : ClassName
+     * entry_method : startCheck
      * config_xml_name : SdkToolConfig.xml
-     * class_count : 5
-     * method_low_limit : 4
+     * class_count : 3
+     * method_low_limit : 6
      * static_ratio : 0.8
      * modify_Modifier : true
-     * static_ratio : 0.8
      * static_method : ["abc"]
      * white_list : {"keep_method":["abc"],"keep_class":["abc"]}
      */
 
     @SerializedName("type")
     private int type;
+    @SerializedName("check_dir")
+    private boolean checkDir;
     @SerializedName("src_path")
     private String srcPath;
     @SerializedName("out_path")
@@ -41,7 +43,7 @@ public class Config {
     @SerializedName("method_low_limit")
     private int methodLowLimit;
     @SerializedName("static_ratio")
-    private float staticRatio;
+    private double staticRatio;
     @SerializedName("modify_Modifier")
     private boolean modifyModifier;
     @SerializedName("white_list")
@@ -55,6 +57,14 @@ public class Config {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public boolean isCheckDir() {
+        return checkDir;
+    }
+
+    public void setCheckDir(boolean checkDir) {
+        this.checkDir = checkDir;
     }
 
     public String getSrcPath() {
@@ -121,11 +131,11 @@ public class Config {
         this.methodLowLimit = methodLowLimit;
     }
 
-    public float getStaticRatio() {
+    public double getStaticRatio() {
         return staticRatio;
     }
 
-    public void setStaticRatio(float staticRatio) {
+    public void setStaticRatio(double staticRatio) {
         this.staticRatio = staticRatio;
     }
 
