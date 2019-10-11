@@ -430,8 +430,8 @@ public class XmlOp {
         editManifestElement.addAttribute("Name", "AndroidManifest.xml");
         editManifestElement.addAttribute("StubActivityCount", "" + RandomUtil.randInt(9, 20));
         editManifestElement.addAttribute("DialogActivityCount", "" + RandomUtil.randInt(9, 20));
-        editManifestElement.addAttribute("AddActivityCount", "10,20");
-        editManifestElement.addAttribute("AddServiceCount", "2,7");
+        editManifestElement.addAttribute("AddActivityCount", "0,0");
+        editManifestElement.addAttribute("AddServiceCount", "0,0");
         editManifestElement.addAttribute("AddProviderCount", "0,0");
         editManifestElement.addAttribute("AddReceiverCount", "0,0");
     }

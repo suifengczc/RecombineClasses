@@ -167,7 +167,7 @@ public class Main {
                 @Override
                 public void visit(StringLiteralExpr n, Object arg) {
                     String matchStr = n.asString();
-                    if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"") && !":".equals(matchStr) && !"%x".equals(matchStr)) {
+                    if (matchStr != null && matchStr.length() > 0 && !matchStr.equals("\"\"") && !":".equals(matchStr) && !"%x".equals(matchStr) && !"true".equals(matchStr) && !"false".equals(matchStr)) {
                         if ("PluginConfig".equals(matchStr) || "AssetName".equals(matchStr)) {
                             mAllStringMap.put(matchStr, matchStr);
                         } else {
