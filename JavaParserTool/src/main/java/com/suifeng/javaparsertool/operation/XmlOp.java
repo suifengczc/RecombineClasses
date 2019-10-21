@@ -23,9 +23,9 @@ import java.util.Map;
  */
 public class XmlOp {
 
-    public static XmlOp instance ;
+    public static XmlOp instance;
 
-    public static XmlOp getInstance(Config config){
+    public static XmlOp getInstance(Config config) {
         if (instance == null) {
             instance = new XmlOp(config);
         }
@@ -59,7 +59,7 @@ public class XmlOp {
      * @param mPackageName        包名
      * @param mEntryMethodName    入口方法名
      */
-    public  void buildXml(String xmlOutPath, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName) {
+    public void buildXml(String xmlOutPath, int classCount, String preClassName, ArrayList<String> mAllMethodsNameList, Map<String, String> mAllStringMap, Map<String, MethodData> mAllMethodDataMap, String mPackageName, String mEntryMethodName) {
         try {
             // 创建document对象
             Document document = DocumentHelper.createDocument();
@@ -202,7 +202,7 @@ public class XmlOp {
         for (int i = 0; i < pluginDirCount; i++) {
             sourceElement = setupElement.addElement("Source");
             sourceElement.addAttribute("Name", "Plugin_" + i);
-            sourceElement.addAttribute("Value", RandomUtil.getMultRandConfig("/", null, 1, 3, false));
+            sourceElement.addAttribute("Value", RandomUtil.getMultRandConfig("/", null, 2, 2, false));
         }
 
 
@@ -224,7 +224,7 @@ public class XmlOp {
 
         sourceElement = setupElement.addElement("Source");
         sourceElement.addAttribute("Name", "VirtualShortcutAction");
-        sourceElement.addAttribute("Value", "com." + RandomUtil.getRandConfig(null) + "." + RandomUtil.getRandConfig(null) + ".action");
+        sourceElement.addAttribute("Value", "com." + RandomUtil.getMultRandConfig(".", "Action", 3, 4, false));
 
         sourceElement = setupElement.addElement("Source");
         sourceElement.addAttribute("Name", "HostTaskAffinity");
